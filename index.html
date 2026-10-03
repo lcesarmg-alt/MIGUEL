@@ -64,69 +64,83 @@ let lives = 3;
 function gerarSprites() {
     const s = {};
 
-    // 1. Árvore Estilo Terraria / Pixel Art Clássico
-    const cTree = document.createElement('canvas'); cTree.width = 64; cTree.height = 80;
+    // 1. Árvore Fiel à Imagem de Referência (Pixel Art Terraria/Minecraft)
+    const cTree = document.createElement('canvas'); 
+    cTree.width = 64; 
+    cTree.height = 96;
     const dT = cTree.getContext('2d');
 
-    // Matriz de desenho pixel por pixel (1 pixel = bloco 2x2)
-    const p = 2; // tamanho da escala do pixel
-    function rect(x, y, w, h, cor) {
-        dT.fillStyle = cor;
-        dT.fillRect(x * p, y * p, w * p, h * p);
+    // Desenha o sprite baseado na matriz pixel a pixel
+    const pixelMap = [
+        ".................BBBB...........",
+        "...............BBGGGBB..........",
+        "..............BGGGGGGGB.........",
+        "............BBGGGGGGGGGBB.......",
+        "...........BGGGGGGGGGGGGGB......",
+        "..........BGGGGGGGGGGGGGGGB.....",
+        ".........BGGGGGGGGGGGGGGGGGB....",
+        "........BGGGGBBBGGGGGGGGGGGB....",
+        "........BGGGBBBBGGGGGBBBGGGB....",
+        ".......BGGGGBBBBBGGGBBBBGGGGB...",
+        "......BGGGGGBBBBBBGGBBBBBGGGB...",
+        "......BGGGGGGBBBBBBBBBBBGGGGB...",
+        ".....BGGGGGGGBBBBBBBBBBBGGGGGB..",
+        ".....BGGGGGGGGBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGGGBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGGGBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGGGBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGBBBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGBBBBBBBBBBBBGGGGGB..",
+        ".....BGGGGGGBBBBBBBBBBBBGGGGGB..",
+        ".....BGGGGGGGBBBBBBBBBBGGGGGB...",
+        "......BGGGGGGGBBBBBBBBGGGGGB....",
+        "......BGGGGGGGGBBBBBGGGGGGGB....",
+        ".......BGGGGGGGGGGGGGGGGGGGB....",
+        "........BGGGGGGGGGGGGGGGGGB.....",
+        ".........BBGGGGGGGGGGGGGBB......",
+        "...........BBGGGGGGGGGBB........",
+        ".............BBBBBBBBB..........",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "..............BBTTTBB...........",
+        ".............BTTTTTTTB..........",
+        ".............BGGGGGGGB..........",
+        "..............BBBBBBB..........."
+    ];
+
+    const scale = 2;
+    for (let r = 0; r < pixelMap.length; r++) {
+        for (let c = 0; c < pixelMap[r].length; c++) {
+            const char = pixelMap[r][c];
+            if (char === '.') continue;
+
+            if (char === 'B') dT.fillStyle = '#000000'; // Contorno preto
+            else if (char === 'G') {
+                // Tonalidades de verde dependendo da altura
+                if (r < 10) dT.fillStyle = '#4ae24a';      // Verde claro (topo)
+                else if (r < 20) dT.fillStyle = '#22b14c'; // Verde médio
+                else dT.fillStyle = '#158033';             // Verde escuro (base da copa)
+            }
+            else if (char === 'T') dT.fillStyle = '#8b4513'; // Tronco de madeira
+
+            dT.fillRect(c * scale, r * scale, scale, scale);
+        }
     }
 
-    // Base verde (Grama ao redor da raiz)
-    rect(10, 37, 12, 3, '#000000');
-    rect(11, 38, 10, 1, '#1b5e20');
-    rect(12, 37, 8, 1, '#4caf50');
-
-    // Tronco (Contorno preto e textura de madeira)
-    rect(13, 22, 6, 15, '#000000'); // Contorno do tronco
-    rect(14, 22, 4, 15, '#8d6e63'); // Sombra madeira
-    rect(15, 22, 2, 15, '#bcaaa4'); // Brilho madeira
-    rect(14, 33, 4, 3, '#5d4037');  // Base do tronco
-
-    // Copa da árvore (Formato denteado estilo Terraria)
-    // Sombra interna/ramos
-    const copaForma = [
-        // y, x_inicio, largura
-        [2, 13, 6], [3, 11, 10], [4, 10, 12], [5, 9, 14],
-        [6, 8, 16], [7, 7, 18], [8, 6, 20], [9, 5, 22],
-        [10, 4, 24], [11, 4, 24], [12, 5, 22], [13, 5, 22],
-        [14, 6, 20], [15, 6, 20], [16, 7, 18], [17, 8, 16],
-        [18, 9, 14], [19, 10, 12], [20, 11, 10], [21, 13, 6]
-    ];
-
-    // Desenhar contorno preto da copa
-    copaForma.forEach(([y, x, w]) => {
-        rect(x - 1, y, w + 2, 1, '#000000');
-    });
-
-    // Preenchimento com gradiente de verdes e galhos escuros
-    copaForma.forEach(([y, x, w]) => {
-        // Cor base de acordo com a altura
-        let cor = '#2e7d32'; // Verde médio
-        if (y < 7) cor = '#4caf50'; // Verde claro no topo
-        else if (y > 15) cor = '#1b5e20'; // Verde escuro embaixo
-
-        rect(x, y, w, 1, cor);
-    });
-
-    // Detalhes dos ramos escuros por dentro (ramos visíveis)
-    rect(15, 7, 2, 10, '#0d3810');
-    rect(12, 10, 8, 2, '#0d3810');
-    rect(10, 14, 12, 2, '#0d3810');
-    rect(8, 11, 4, 6, '#0d3810');
-    rect(20, 11, 4, 6, '#0d3810');
-
-    // Pontas denteadas da folhagem
-    const dentes = [
-        [11, 2], [15, 1], [19, 3], [7, 5], [23, 5],
-        [5, 8], [25, 8], [4, 12], [26, 12], [6, 17], [24, 17]
-    ];
-    dentes.forEach(([x, y]) => {
-        rect(x, y, 2, 2, '#81c784'); // Brilho nas pontas
-    });
+    // Desenhar os ramos/galhos internos em preto/escuro como na imagem de referência
+    dT.fillStyle = '#0a2e0c';
+    dT.fillRect(28, 18, 4, 24);
+    dT.fillRect(24, 24, 12, 3);
+    dT.fillRect(20, 30, 20, 3);
+    dT.fillRect(18, 34, 10, 3);
+    dT.fillRect(32, 22, 10, 3);
 
     s.arvore = cTree;
 
@@ -262,12 +276,319 @@ function draw() {
         }
     }
 
-    // Árvores Estilo Terraria nas Laterais
-    for (let y = -10; y < canvas.height; y += 75) {
-        ctx.drawImage(SPRITES.arvore, 20, y);
-        ctx.drawImage(SPRITES.arvore, 90, y);
-        ctx.drawImage(SPRITES.arvore, 800, y);
-        ctx.drawImage(SPRITES.arvore, 870, y);
+    // Árvores Posicionadas Corretamente nas Laterais
+    const posX = [20, 90, 800, 870];
+    for (let x of posX) {
+        for (let y = 10; y < canvas.height; y += 120) {
+            ctx.drawImage(SPRITES.arvore, x, y);
+        }
+    }
+
+    // Construções
+    ctx.drawImage(SPRITES.casa_mariangela, 180, 20);
+    ctx.drawImage(SPRITES.casa_rosilene, 610, 20);
+    ctx.drawImage(SPRITES.escola, 180, 480);
+    ctx.drawImage(SPRITES.igreja, 610, 480);
+
+    // Personagens
+    ctx.drawImage(SPRITES.coringa, enemy.x, enemy.y);
+    ctx.drawImage(SPRITES.miguel, player.x, player.y);
+    ctx.drawImage(SPRITES.batman, player.x + 36, player.y - 12);
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>As Aventuras de Miguel e Batman</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #0b0f19;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        h1 { margin-bottom: 8px; font-size: 26px; color: #ffd700; text-shadow: 2px 2px 4px #000; }
+        #canvas-container {
+            position: relative;
+            border: 4px solid #222;
+            border-radius: 8px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.9);
+            background-color: #1e4620;
+        }
+        canvas { display: block; image-rendering: pixelated; }
+        #ui {
+            margin-top: 12px;
+            display: flex;
+            gap: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            background: rgba(0,0,0,0.75);
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid #444;
+        }
+        .hint { margin-top: 6px; color: #888; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <h1>⚔️ As Aventuras de Miguel e Batman</h1>
+    <div id="canvas-container">
+        <canvas id="gameCanvas" width="960" height="640"></canvas>
+    </div>
+    <div id="ui">
+        <div>⭐ Pontos: <span id="score" style="color: #ffd700;">0</span></div>
+        <div>❤️ Vidas: <span id="lives" style="color: #ff4d4d;">3</span></div>
+        <div>🏆 Nível: <span id="level" style="color: #00e5ff;">1</span></div>
+    </div>
+    <div class="hint">Use as **Setas do Teclado** ou **WASD** para mover o Miguel e o Batman!</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let score = 0;
+let lives = 3;
+
+// --- GERADOR DE SPRITES EM PIXEL ART ---
+function gerarSprites() {
+    const s = {};
+
+    // 1. Árvore Fiel à Imagem de Referência (Pixel Art Terraria/Minecraft)
+    const cTree = document.createElement('canvas'); 
+    cTree.width = 64; 
+    cTree.height = 96;
+    const dT = cTree.getContext('2d');
+
+    // Desenha o sprite baseado na matriz pixel a pixel
+    const pixelMap = [
+        ".................BBBB...........",
+        "...............BBGGGBB..........",
+        "..............BGGGGGGGB.........",
+        "............BBGGGGGGGGGBB.......",
+        "...........BGGGGGGGGGGGGGB......",
+        "..........BGGGGGGGGGGGGGGGB.....",
+        ".........BGGGGGGGGGGGGGGGGGB....",
+        "........BGGGGBBBGGGGGGGGGGGB....",
+        "........BGGGBBBBGGGGGBBBGGGB....",
+        ".......BGGGGBBBBBGGGBBBBGGGGB...",
+        "......BGGGGGBBBBBBGGBBBBBGGGB...",
+        "......BGGGGGGBBBBBBBBBBBGGGGB...",
+        ".....BGGGGGGGBBBBBBBBBBBGGGGGB..",
+        ".....BGGGGGGGGBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGGGBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGGGBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGGGBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGBBBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGBBBBBBBBBBBBGGGGGB..",
+        ".....BGGGGGGBBBBBBBBBBBBGGGGGB..",
+        ".....BGGGGGGGBBBBBBBBBBGGGGGB...",
+        "......BGGGGGGGBBBBBBBBGGGGGB....",
+        "......BGGGGGGGGBBBBBGGGGGGGB....",
+        ".......BGGGGGGGGGGGGGGGGGGGB....",
+        "........BGGGGGGGGGGGGGGGGGB.....",
+        ".........BBGGGGGGGGGGGGGBB......",
+        "...........BBGGGGGGGGGBB........",
+        ".............BBBBBBBBB..........",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "..............BBTTTBB...........",
+        ".............BTTTTTTTB..........",
+        ".............BGGGGGGGB..........",
+        "..............BBBBBBB..........."
+    ];
+
+    const scale = 2;
+    for (let r = 0; r < pixelMap.length; r++) {
+        for (let c = 0; c < pixelMap[r].length; c++) {
+            const char = pixelMap[r][c];
+            if (char === '.') continue;
+
+            if (char === 'B') dT.fillStyle = '#000000'; // Contorno preto
+            else if (char === 'G') {
+                // Tonalidades de verde dependendo da altura
+                if (r < 10) dT.fillStyle = '#4ae24a';      // Verde claro (topo)
+                else if (r < 20) dT.fillStyle = '#22b14c'; // Verde médio
+                else dT.fillStyle = '#158033';             // Verde escuro (base da copa)
+            }
+            else if (char === 'T') dT.fillStyle = '#8b4513'; // Tronco de madeira
+
+            dT.fillRect(c * scale, r * scale, scale, scale);
+        }
+    }
+
+    // Desenhar os ramos/galhos internos em preto/escuro como na imagem de referência
+    dT.fillStyle = '#0a2e0c';
+    dT.fillRect(28, 18, 4, 24);
+    dT.fillRect(24, 24, 12, 3);
+    dT.fillRect(20, 30, 20, 3);
+    dT.fillRect(18, 34, 10, 3);
+    dT.fillRect(32, 22, 10, 3);
+
+    s.arvore = cTree;
+
+    // 2. Estrada de Paralelepípedo
+    const cRoad = document.createElement('canvas'); cRoad.width = 64; cRoad.height = 64;
+    const dR = cRoad.getContext('2d');
+    dR.fillStyle = '#787884'; dR.fillRect(0,0,64,64);
+    for(let y=0; y<64; y+=8) {
+        let offset = (y % 16 === 0) ? 0 : 8;
+        for(let x=0; x<64; x+=16) {
+            let px = x + offset;
+            dR.fillStyle = '#9aa0a8'; dR.fillRect(px+1, y+1, 14, 6);
+            dR.fillStyle = '#565660'; dR.fillRect(px, y, 16, 1); dR.fillRect(px, y, 1, 8);
+            dR.fillStyle = '#b0b8c2'; dR.fillRect(px+2, y+2, 12, 1);
+        }
+    }
+    s.estrada = cRoad;
+
+    // 3. Batman HD com Sabre Azul
+    const cBat = document.createElement('canvas'); cBat.width = 64; cBat.height = 64;
+    const dBat = cBat.getContext('2d');
+    dBat.fillStyle = 'rgba(0,0,0,0.4)'; dBat.beginPath(); dBat.ellipse(32, 58, 20, 6, 0, 0, Math.PI*2); dBat.fill();
+    dBat.fillStyle = '#0d0d11'; dBat.fillRect(12, 22, 40, 32);
+    dBat.fillStyle = '#23242c'; dBat.fillRect(20, 18, 24, 34);
+    dBat.fillStyle = '#fbc02d'; dBat.fillRect(20, 36, 24, 6);
+    dBat.fillStyle = '#0d0d11'; dBat.fillRect(20, 6, 24, 18);
+    dBat.beginPath(); dBat.moveTo(20,6); dBat.lineTo(24,0); dBat.lineTo(28,6); dBat.fill();
+    dBat.beginPath(); dBat.moveTo(36,6); dBat.lineTo(40,0); dBat.lineTo(44,6); dBat.fill();
+    dBat.fillStyle = '#ffffff'; dBat.fillRect(24, 10, 5, 3); dBat.fillRect(35, 10, 5, 3);
+    dBat.fillStyle = '#00e5ff'; dBat.shadowColor = '#00e5ff'; dBat.shadowBlur = 12;
+    dBat.fillRect(44, 12, 5, 36); dBat.shadowBlur = 0;
+    s.batman = cBat;
+
+    // 4. Coringa HD com Sabre Vermelho
+    const cJok = document.createElement('canvas'); cJok.width = 64; cJok.height = 64;
+    const dJok = cJok.getContext('2d');
+    dJok.fillStyle = 'rgba(0,0,0,0.4)'; dJok.beginPath(); dJok.ellipse(32, 58, 20, 6, 0, 0, Math.PI*2); dJok.fill();
+    dJok.fillStyle = '#4a148c'; dJok.fillRect(20, 20, 24, 34);
+    dJok.fillStyle = '#ffb300'; dJok.fillRect(28, 22, 8, 14);
+    dJok.fillStyle = '#1b5e20'; dJok.fillRect(18, 4, 28, 10);
+    dJok.fillStyle = '#ffffff'; dJok.fillRect(22, 10, 20, 14);
+    dJok.fillStyle = '#d50000'; dJok.fillRect(24, 18, 16, 4);
+    dJok.fillStyle = '#000000'; dJok.fillRect(25, 12, 3, 3); dJok.fillRect(36, 12, 3, 3);
+    dJok.fillStyle = '#ff1744'; dJok.shadowColor = '#ff1744'; dJok.shadowBlur = 12;
+    dJok.fillRect(14, 12, 5, 36); dJok.shadowBlur = 0;
+    s.coringa = cJok;
+
+    // 5. Miguel HD na Cadeira de Rodas
+    const cMig = document.createElement('canvas'); cMig.width = 64; cMig.height = 64;
+    const dMig = cMig.getContext('2d');
+    dMig.fillStyle = 'rgba(0,0,0,0.4)'; dMig.beginPath(); dMig.ellipse(32, 58, 22, 6, 0, 0, Math.PI*2); dMig.fill();
+    dMig.strokeStyle = '#0288d1'; dMig.lineWidth = 5;
+    dMig.beginPath(); dMig.arc(20, 44, 14, 0, Math.PI*2); dMig.stroke();
+    dMig.beginPath(); dMig.arc(44, 44, 14, 0, Math.PI*2); dMig.stroke();
+    dMig.fillStyle = '#37474f'; dMig.fillRect(20, 28, 24, 18);
+    dMig.fillStyle = '#1976d2'; dMig.fillRect(22, 22, 20, 14);
+    dMig.fillStyle = '#ffcc80'; dMig.fillRect(24, 8, 16, 14);
+    dMig.fillStyle = '#5d4037'; dMig.fillRect(22, 6, 20, 6);
+    dMig.fillStyle = '#000000'; dMig.fillRect(27, 12, 3, 3); dMig.fillRect(34, 12, 3, 3);
+    s.miguel = cMig;
+
+    // 6. Construções
+    function criarPredio(corParede, rotulo) {
+        const cP = document.createElement('canvas'); cP.width = 160; cP.height = 120;
+        const dP = cP.getContext('2d');
+        dP.fillStyle = corParede; dP.fillRect(10, 35, 140, 80);
+        dP.strokeStyle = '#1a1a1a'; dP.lineWidth = 4; dP.strokeRect(10, 35, 140, 80);
+        dP.fillStyle = '#b71c1c';
+        dP.beginPath(); dP.moveTo(0,35); dP.lineTo(80,5); dP.lineTo(160,35); dP.closePath(); dP.fill(); dP.stroke();
+        dP.fillStyle = '#4e342e'; dP.fillRect(65, 75, 30, 40); dP.strokeRect(65, 75, 30, 40);
+        dP.fillStyle = '#fff8e1'; dP.fillRect(25, 50, 26, 26); dP.fillRect(109, 50, 26, 26);
+        dP.strokeRect(25, 50, 26, 26); dP.strokeRect(109, 50, 26, 26);
+        dP.fillStyle = '#ffffff'; dP.fillRect(20, 10, 120, 18); dP.strokeRect(20, 10, 120, 18);
+        dP.fillStyle = '#000000'; dP.font = 'bold 11px sans-serif'; dP.textAlign = 'center';
+        dP.fillText(rotulo, 80, 23);
+        return cP;
+    }
+
+    s.casa_mariangela = criarPredio('#ef6c00', 'Casa Mariangela');
+    s.casa_rosilene = criarPredio('#0277bd', 'Casa Rosilene');
+    s.escola = criarPredio('#2e7d32', 'Escola');
+    s.igreja = criarPredio('#6a1b9a', 'Igreja');
+
+    return s;
+}
+
+const SPRITES = gerarSprites();
+
+const player = { x: 448, y: 280, speed: 4 };
+const enemy = { x: 100, y: 100, speed: 1.6 };
+
+const keys = {};
+window.addEventListener('keydown', e => keys[e.key] = true);
+window.addEventListener('keyup', e => keys[e.key] = false);
+
+function update() {
+    if (keys['ArrowUp'] || keys['w'] || keys['W']) player.y -= player.speed;
+    if (keys['ArrowDown'] || keys['s'] || keys['S']) player.y += player.speed;
+    if (keys['ArrowLeft'] || keys['a'] || keys['A']) player.x -= player.speed;
+    if (keys['ArrowRight'] || keys['d'] || keys['D']) player.x += player.speed;
+
+    player.x = Math.max(160, Math.min(canvas.width - 220, player.x));
+    player.y = Math.max(20, Math.min(canvas.height - 80, player.y));
+
+    if (enemy.x < player.x) enemy.x += enemy.speed;
+    if (enemy.x > player.x) enemy.x -= enemy.speed;
+    if (enemy.y < player.y) enemy.y += enemy.speed;
+    if (enemy.y > player.y) enemy.y -= enemy.speed;
+
+    const dist = Math.hypot((player.x + 32) - (enemy.x + 32), (player.y + 32) - (enemy.y + 32));
+    if (dist < 40) {
+        lives--;
+        document.getElementById('lives').textContent = lives;
+        player.x = 448; player.y = 280;
+        enemy.x = 180; enemy.y = 80;
+        if (lives <= 0) {
+            alert("O Coringa foi derrotado! Vamos tentar novamente!");
+            lives = 3; score = 0;
+            document.getElementById('lives').textContent = lives;
+            document.getElementById('score').textContent = score;
+        }
+    }
+}
+
+function draw() {
+    // Gramado
+    ctx.fillStyle = '#27ae60'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Estrada Central
+    for (let y = 0; y < canvas.height; y += 64) {
+        for (let x = 384; x < 576; x += 64) {
+            ctx.drawImage(SPRITES.estrada, x, y);
+        }
+    }
+
+    // Árvores Posicionadas Corretamente nas Laterais
+    const posX = [20, 90, 800, 870];
+    for (let x of posX) {
+        for (let y = 10; y < canvas.height; y += 120) {
+            ctx.drawImage(SPRITES.arvore, x, y);
+        }
     }
 
     // Construções
