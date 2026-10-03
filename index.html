@@ -74,16 +74,9 @@
             cursor: pointer;
             transition: background 0.2s;
         }
-        .modal-btn:hover {
-            background: #039be5;
-        }
-        .modal-btn.close {
-            background: #546e7a;
-            margin-top: 15px;
-        }
-        .modal-btn.close:hover {
-            background: #78909c;
-        }
+        .modal-btn:hover { background: #039be5; }
+        .modal-btn.close { background: #546e7a; margin-top: 15px; }
+        .modal-btn.close:hover { background: #78909c; }
     </style>
 </head>
 <body>
@@ -106,22 +99,25 @@
         <div>❤️ Vidas: <span id="lives" style="color: #ff4d4d;">3</span></div>
         <div>🏆 Nível: <span id="level" style="color: #00e5ff;">1</span></div>
     </div>
-    <div class="hint">Aproxime-se da Casa da Vovó Rosilene para abrir as opções!</div>
+    <div class="hint">Use as setas ou WASD para caminhar pela calçada até a Casa da Vovó!</div>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-let score = 0;
-let lives = 3;
-let cenaAtual = 'mapa'; // 'mapa', 'piscina', 'vovo'
+let cenaAtual = 'mapa';
 let modalAberto = false;
+
+// Controle de Animação de Caminhada
+let walkFrame = 0;
+let walkTimer = 0;
+let isWalking = false;
 
 // --- GERADOR DE SPRITES EM PIXEL ART ---
 function gerarSprites() {
     const s = {};
 
-    // 1. Árvore em Pixel Art
+    // 1. Árvore
     const cTree = document.createElement('canvas'); 
     cTree.width = 64; cTree.height = 96;
     const dT = cTree.getContext('2d');
@@ -185,113 +181,71 @@ function gerarSprites() {
     }
     s.arvore = cTree;
 
-    // 2. Estrada
+    // 2. Estrada e Calçada
     const cRoad = document.createElement('canvas'); cRoad.width = 64; cRoad.height = 64;
     const dR = cRoad.getContext('2d');
-    dR.fillStyle = '#787884'; dR.fillRect(0,0,64,64);
-    for(let y=0; y<64; y+=8) {
-        let offset = (y % 16 === 0) ? 0 : 8;
-        for(let x=0; x<64; x+=16) {
-            let px = x + offset;
-            dR.fillStyle = '#9aa0a8'; dR.fillRect(px+1, y+1, 14, 6);
-            dR.fillStyle = '#565660'; dR.fillRect(px, y, 16, 1); dR.fillRect(px, y, 1, 8);
-            dR.fillStyle = '#b0b8c2'; dR.fillRect(px+2, y+2, 12, 1);
-        }
+    dR.fillStyle = '#55555e'; dR.fillRect(0,0,64,64);
+    for(let y=0; y<64; y+=16) {
+        dR.fillStyle = '#3a3a42'; dR.fillRect(0, y, 64, 2);
     }
+    dR.fillStyle = '#f5b041'; dR.fillRect(30, 0, 4, 64);
     s.estrada = cRoad;
 
-    // 3. Batman Pixel Art
-    const cBat = document.createElement('canvas'); cBat.width = 64; cBat.height = 64;
-    const dBat = cBat.getContext('2d');
-    const pixelMapBatman = [
-        "........K.....K........",
-        "........KK...KK........",
-        ".......KKKK.KKKK.......",
-        ".......KKKKKKKKK.......",
-        ".......KKGKKKGGK.......",
-        ".......KKWWKKWWK.......",
-        ".......KKKKKKKKK.......",
-        "........KKFEEFK........",
-        "........KKKKKKK........",
-        ".......KKGGGGGGK.......",
-        "......KGGGGGGGGGK......",
-        ".....KGGGGGGGGGGGK.....",
-        ".....KGGGGGGGGGGGK.....",
-        "....KKKKYYYYYYYKKKK....",
-        "....KKKKKGGGGGGKKKK....",
-        "....KKKKGGGGGGGKKKK....",
-        ".....KKKGG...GGKKK.....",
-        ".....KKKGG...GGKKK.....",
-        ".....KKKGG...GGKKK.....",
-        ".....KKKKK...KKKKK.....",
-        ".....KKKKK...KKKKK....."
-    ];
-    const scaleB = 2.5;
-    for (let r = 0; r < pixelMapBatman.length; r++) {
-        for (let c = 0; c < pixelMapBatman[r].length; c++) {
-            const char = pixelMapBatman[r][c];
-            if (char === '.') continue;
-            if (char === 'K') dBat.fillStyle = '#1e1e24';
-            else if (char === 'G') dBat.fillStyle = '#7a7e85';
-            else if (char === 'W') dBat.fillStyle = '#ffffff';
-            else if (char === 'F') dBat.fillStyle = '#ffcc80';
-            else if (char === 'E') dBat.fillStyle = '#d7ccc8';
-            else if (char === 'Y') dBat.fillStyle = '#d4a017';
-            dBat.fillRect(c * scaleB, r * scaleB, scaleB, scaleB);
-        }
+    const cSidewalk = document.createElement('canvas'); cSidewalk.width = 64; cSidewalk.height = 64;
+    const dS = cSidewalk.getContext('2d');
+    dS.fillStyle = '#b0bec5'; dS.fillRect(0,0,64,64);
+    dS.fillStyle = '#78909c';
+    for(let i=0; i<64; i+=16) {
+        dS.fillRect(i, 0, 2, 64);
+        dS.fillRect(0, i, 64, 2);
     }
-    s.batman = cBat;
+    s.calcada = cSidewalk;
 
-    // 4. Miguel
-    const cMig = document.createElement('canvas'); cMig.width = 64; cMig.height = 64;
-    const dMig = cMig.getContext('2d');
-    const pixelMapMiguel = [
-        "..................HH..............",
-        ".............SHHH.HHHH............",
-        "............SHHHHHHHHH............",
-        "...........SHHHHHHHHHHH...........",
-        "...........SHHHHHHHHHHH...........",
-        "..........SHHFFFFFFFFFFHH.........",
-        ".........SHHFFFEFFFEFFFFHH........",
-        ".........SHHFFFFFFFFFFEEFF........",
-        ".........SHHFFFFFEFFFFFFEE........",
-        "..........SHFFFFFEEEEEEFFF........",
-        "..........S.FFFFFFFFFF............",
-        ".........S.AAACCCCCCCAAAA.........",
-        "........S.AAAACCCCCCCAAAAA........",
-        ".......S..AAAACCCCCCCAAAAAA.......",
-        "......S...AAAACCCCCCCAAAAAAA......",
-        ".....S....PPPPP.PPPPP.............",
-        "....S....PPPPPP.PPPPPP............",
-        "...S....PPPPPPP.PPPPPPP...........",
-        "..S....WWWWWWWW.WWWWWWWW..........",
-        ".......WWWWWWWW.WWWWWWWW..........",
-        "........RRRRRR...RRRRRR...........",
-        ".......RRRRRRRR.RRRRRRRR..........",
-        "......RRRRRRRRRRRRRRRRRRR.........",
-        "......RRRRRRRRRRRRRRRRRRR.........",
-        ".......RRRRRRRR.RRRRRRRR..........",
-        "........RRRRRR...RRRRRR...........",
-        "..........R........R.............."
-    ];
-    const scaleM = 2;
-    for (let r = 0; r < pixelMapMiguel.length; r++) {
-        for (let c = 0; c < pixelMapMiguel[r].length; c++) {
-            const char = pixelMapMiguel[r][c];
-            if (char === '.') continue;
-            if (char === 'H') dMig.fillStyle = '#6d4c41';
-            else if (char === 'F') dMig.fillStyle = '#ffcc80';
-            else if (char === 'E') dMig.fillStyle = '#1a237e';
-            else if (char === 'A') dMig.fillStyle = '#29b6f6';
-            else if (char === 'P') dMig.fillStyle = '#263238';
-            else if (char === 'W') dMig.fillStyle = '#eceff1';
-            else if (char === 'S') dMig.fillStyle = '#b0bec5';
-            else if (char === 'C') dMig.fillStyle = '#1565c0';
-            else if (char === 'R') dMig.fillStyle = '#37474f';
-            dMig.fillRect(c * scaleM, r * scaleM, scaleM, scaleM);
-        }
-    }
-    s.miguel = cMig;
+    // 3. Batman com Passos
+    s.drawBatman = function(ctx, x, y, frame) {
+        const offsetLeft = (frame === 1) ? -3 : 0;
+        const offsetRight = (frame === 2) ? 3 : 0;
+
+        ctx.save();
+        ctx.translate(x, y);
+
+        ctx.fillStyle = '#1e1e24';
+        ctx.fillRect(8, 38 + offsetLeft, 8, 14);
+        ctx.fillRect(20, 38 + offsetRight, 8, 14);
+
+        ctx.fillRect(6, 16, 24, 24); 
+        ctx.fillStyle = '#7a7e85'; ctx.fillRect(10, 20, 16, 18);
+        ctx.fillStyle = '#d4a017'; ctx.fillRect(10, 34, 16, 4);
+        ctx.fillStyle = '#1e1e24'; ctx.fillRect(10, 4, 16, 14);
+        ctx.fillRect(8, 0, 4, 8); ctx.fillRect(24, 0, 4, 8);
+        ctx.fillStyle = '#ffcc80'; ctx.fillRect(14, 12, 8, 5);
+
+        ctx.restore();
+    };
+
+    // 4. Miguel com Passos
+    s.drawMiguel = function(ctx, x, y, frame) {
+        const offsetLeft = (frame === 1) ? -3 : 0;
+        const offsetRight = (frame === 2) ? 3 : 0;
+
+        ctx.save();
+        ctx.translate(x, y);
+
+        ctx.fillStyle = '#263238';
+        ctx.fillRect(6, 36 + offsetLeft, 7, 12);
+        ctx.fillRect(17, 36 + offsetRight, 7, 12);
+        ctx.fillStyle = '#37474f';
+        ctx.fillRect(5, 45 + offsetLeft, 9, 5);
+        ctx.fillRect(16, 45 + offsetRight, 9, 5);
+
+        ctx.fillStyle = '#29b6f6'; ctx.fillRect(6, 18, 18, 18);
+        ctx.fillStyle = '#1565c0'; ctx.fillRect(11, 20, 8, 14);
+
+        ctx.fillStyle = '#ffcc80'; ctx.fillRect(8, 6, 14, 13);
+        ctx.fillStyle = '#6d4c41'; ctx.fillRect(6, 2, 18, 7);
+
+        ctx.restore();
+    };
 
     // 5. Construções
     function criarPredio(corParede, rotulo) {
@@ -315,102 +269,26 @@ function gerarSprites() {
     s.escola = criarPredio('#2e7d32', 'Escola');
     s.igreja = criarPredio('#6a1b9a', 'Igreja');
 
-    // 6. Imagem da Piscina (Conteúdo Interno)
-    const cPiscina = document.createElement('canvas');
-    cPiscina.width = 440; cPiscina.height = 260;
+    // 6. Imagem da Piscina (Tamanho proporcional ao balão)
+    const cPiscina = document.createElement('canvas'); cPiscina.width = 320; cPiscina.height = 200;
     const dP = cPiscina.getContext('2d');
-
-    dP.fillStyle = '#87ceeb'; dP.fillRect(0, 0, 440, 120);
-    dP.fillStyle = '#ffffff'; 
-    dP.beginPath(); dP.arc(90, 40, 20, 0, Math.PI*2); dP.arc(110, 35, 25, 0, Math.PI*2); dP.arc(130, 40, 20, 0, Math.PI*2); dP.fill();
-    dP.beginPath(); dP.arc(320, 45, 18, 0, Math.PI*2); dP.arc(340, 40, 22, 0, Math.PI*2); dP.arc(360, 45, 18, 0, Math.PI*2); dP.fill();
-
-    dP.fillStyle = '#2e7d32';
-    dP.beginPath(); dP.arc(50, 110, 40, 0, Math.PI*2); dP.fill();
-    dP.beginPath(); dP.arc(100, 120, 35, 0, Math.PI*2); dP.fill();
-    dP.beginPath(); dP.arc(330, 110, 30, 0, Math.PI*2); dP.fill();
-    dP.beginPath(); dP.arc(380, 100, 40, 0, Math.PI*2); dP.fill();
-
-    dP.fillStyle = '#ffe0b2'; dP.fillRect(0, 110, 440, 150);
-
-    dP.fillStyle = '#29b6f6'; dP.beginPath(); dP.moveTo(50, 150); dP.lineTo(390, 150); dP.lineTo(425, 245); dP.lineTo(15, 245); dP.closePath(); dP.fill();
-    dP.fillStyle = '#0288d1'; dP.fillRect(15, 240, 410, 8);
-
-    dP.fillStyle = '#4fc3f7'; dP.beginPath(); dP.moveTo(60, 158); dP.lineTo(380, 158); dP.lineTo(410, 235); dP.lineTo(30, 235); dP.closePath(); dP.fill();
-
-    dP.strokeStyle = 'rgba(255, 255, 255, 0.8)'; dP.lineWidth = 3;
-    dP.beginPath(); dP.moveTo(150, 158); dP.lineTo(140, 235); dP.stroke();
-    dP.beginPath(); dP.moveTo(230, 158); dP.lineTo(235, 235); dP.stroke();
-    dP.beginPath(); dP.moveTo(310, 158); dP.lineTo(330, 235); dP.stroke();
-
-    dP.fillStyle = '#cfd8dc'; dP.fillRect(60, 100, 8, 50);
-    dP.fillStyle = '#37474f'; dP.fillRect(45, 90, 6, 60);
-    for(let step=95; step<150; step+=8) { dP.fillRect(43, step, 10, 2); }
-    dP.fillStyle = '#0288d1'; dP.fillRect(55, 90, 150, 10);
-    dP.fillStyle = '#e0e0e0'; dP.fillRect(55, 87, 80, 3);
-    dP.fillStyle = '#0277bd'; dP.beginPath(); dP.moveTo(110, 135); dP.lineTo(215, 105); dP.lineTo(220, 112); dP.lineTo(115, 142); dP.closePath(); dP.fill();
-
-    dP.fillStyle = '#e91e63'; dP.beginPath(); dP.arc(370, 125, 25, Math.PI, 0); dP.closePath(); dP.fill();
-    dP.fillStyle = '#ffffff'; dP.beginPath(); dP.moveTo(370, 125); dP.lineTo(355, 125); dP.lineTo(363, 100); dP.closePath(); dP.fill();
-    dP.beginPath(); dP.moveTo(370, 125); dP.lineTo(385, 125); dP.lineTo(377, 100); dP.closePath(); dP.fill();
-    dP.fillStyle = '#5d4037'; dP.fillRect(368, 125, 3, 35);
-
-    dP.fillStyle = '#ffffff'; dP.fillRect(340, 150, 45, 6);
-    dP.beginPath(); dP.moveTo(340, 150); dP.lineTo(328, 138); dP.lineTo(333, 135); dP.lineTo(345, 150); dP.closePath(); dP.fill();
-    dP.fillStyle = '#00897b'; dP.fillRect(342, 145, 35, 5);
-
+    dP.fillStyle = '#87ceeb'; dP.fillRect(0, 0, 320, 80);
+    dP.fillStyle = '#2e7d32'; dP.beginPath(); dP.arc(30, 75, 30, 0, Math.PI*2); dP.fill();
+    dP.fillStyle = '#ffe0b2'; dP.fillRect(0, 80, 320, 120);
+    dP.fillStyle = '#29b6f6'; dP.beginPath(); dP.moveTo(30, 110); dP.lineTo(290, 110); dP.lineTo(310, 190); dP.lineTo(10, 190); dP.closePath(); dP.fill();
+    dP.fillStyle = '#0288d1'; dP.fillRect(10, 185, 300, 6);
     s.piscina_img = cPiscina;
-
-    // 7. Balão de Conversa em Pixel Art
-    const cBubble = document.createElement('canvas');
-    cBubble.width = 520; cBubble.height = 360;
-    const dB = cBubble.getContext('2d');
-
-    function drawPixelRect(x, y, w, h, color) {
-        dB.fillStyle = color;
-        dB.fillRect(x, y, w, h);
-    }
-
-    // Borda Externa Preta (Pixel Art)
-    drawPixelRect(80, 0, 360, 270, '#000000');
-    drawPixelRect(50, 20, 420, 230, '#000000');
-    drawPixelRect(30, 40, 460, 190, '#000000');
-    drawPixelRect(20, 70, 480, 130, '#000000');
-
-    // Ponta do Balão
-    drawPixelRect(180, 270, 40, 30, '#000000');
-    drawPixelRect(190, 300, 30, 30, '#000000');
-    drawPixelRect(200, 330, 20, 20, '#000000');
-
-    // Preenchimento Interno Azul Claro / Sombra
-    drawPixelRect(80, 10, 360, 250, '#53a8b6');
-    drawPixelRect(40, 30, 440, 210, '#53a8b6');
-    drawPixelRect(30, 70, 460, 130, '#53a8b6');
-
-    // Ponta do Balão Interno
-    drawPixelRect(190, 260, 20, 30, '#53a8b6');
-    drawPixelRect(200, 290, 15, 30, '#53a8b6');
-
-    // Centro Branco do Balão
-    drawPixelRect(80, 16, 350, 238, '#e2ece9');
-    drawPixelRect(40, 36, 430, 198, '#e2ece9');
-    drawPixelRect(36, 70, 440, 130, '#e2ece9');
-
-    s.balao_dialogo = cBubble;
 
     return s;
 }
 
 const SPRITES = gerarSprites();
-
-const player = { x: 448, y: 280, speed: 4 };
+const player = { x: 330, y: 300, speed: 3.5 };
 
 const keys = {};
 window.addEventListener('keydown', e => {
     keys[e.key] = true;
-    if (e.key === 'Escape' && cenaAtual !== 'mapa') {
-        voltarAoMapa();
-    }
+    if (e.key === 'Escape' && cenaAtual !== 'mapa') voltarAoMapa();
 });
 window.addEventListener('keyup', e => keys[e.key] = false);
 
@@ -437,13 +315,72 @@ function voltarAoMapa() {
     player.y = 150;
 }
 
+// Desenha o Balão com recorte interno preciso
+function desenharBalaoComPiscina(x, y, largura, altura) {
+    ctx.save();
+
+    const p = 8; // escala dos pixels das bordas
+
+    // 1. Cria a área interna recortada (Máscara de Recorte)
+    ctx.beginPath();
+    ctx.rect(x + p*2, y + p, largura - p*4, altura - p*2);
+    ctx.rect(x + p, y + p*2, largura - p*2, altura - p*4);
+    ctx.clip();
+
+    // 2. Desenha a Imagem da Piscina dentro do limite do balão
+    ctx.drawImage(SPRITES.piscina_img, x, y, largura, altura - p*2);
+
+    ctx.restore();
+
+    // 3. Desenha os Contornos Pixel Art e a Ponta do Balão por CIMA
+    ctx.fillStyle = '#000000';
+
+    // Bordas superiores e inferiores
+    ctx.fillRect(x + p*2, y, largura - p*4, p);
+    ctx.fillRect(x + p*2, y + altura - p*3, largura - p*4, p);
+
+    // Bordas laterais
+    ctx.fillRect(x, y + p*2, p, altura - p*5);
+    ctx.fillRect(x + largura - p, y + p*2, p, altura - p*5);
+
+    // Cantos
+    ctx.fillRect(x + p, y + p, p, p);
+    ctx.fillRect(x + largura - p*2, y + p, p, p);
+    ctx.fillRect(x + p, y + altura - p*4, p, p);
+    ctx.fillRect(x + largura - p*2, y + altura - p*4, p, p);
+
+    // Sombra interna lateral (estilo pixel art)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    ctx.fillRect(x + largura - p*3, y + p, p*2, altura - p*3);
+
+    // Ponta do Balão de Fala
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(x + p*6, y + altura - p*3, p*3, p);
+    ctx.fillRect(x + p*7, y + altura - p*2, p*2, p);
+    ctx.fillRect(x + p*8, y + altura - p, p, p);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x + p*6, y + altura - p*3, p*2, p);
+    ctx.fillRect(x + p*7, y + altura - p*2, p, p);
+}
+
 function update() {
     if (modalAberto) return;
 
-    if (keys['ArrowUp'] || keys['w'] || keys['W']) player.y -= player.speed;
-    if (keys['ArrowDown'] || keys['s'] || keys['S']) player.y += player.speed;
-    if (keys['ArrowLeft'] || keys['a'] || keys['A']) player.x -= player.speed;
-    if (keys['ArrowRight'] || keys['d'] || keys['D']) player.x += player.speed;
+    isWalking = false;
+    if (keys['ArrowUp'] || keys['w'] || keys['W']) { player.y -= player.speed; isWalking = true; }
+    if (keys['ArrowDown'] || keys['s'] || keys['S']) { player.y += player.speed; isWalking = true; }
+    if (keys['ArrowLeft'] || keys['a'] || keys['A']) { player.x -= player.speed; isWalking = true; }
+    if (keys['ArrowRight'] || keys['d'] || keys['D']) { player.x += player.speed; isWalking = true; }
+
+    if (isWalking) {
+        walkTimer++;
+        if (walkTimer % 8 === 0) {
+            walkFrame = (walkFrame === 1) ? 2 : 1;
+        }
+    } else {
+        walkFrame = 0;
+    }
 
     if (cenaAtual === 'mapa') {
         player.x = Math.max(160, Math.min(canvas.width - 220, player.x));
@@ -465,9 +402,14 @@ function draw() {
         ctx.fillStyle = '#27ae60'; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         for (let y = 0; y < canvas.height; y += 64) {
-            for (let x = 384; x < 576; x += 64) {
+            for (let x = 416; x < 544; x += 64) {
                 ctx.drawImage(SPRITES.estrada, x, y);
             }
+        }
+
+        for (let y = 0; y < canvas.height; y += 64) {
+            ctx.drawImage(SPRITES.calcada, 352, y);
+            ctx.drawImage(SPRITES.calcada, 544, y);
         }
 
         const posX = [20, 90, 800, 870];
@@ -482,33 +424,24 @@ function draw() {
         ctx.drawImage(SPRITES.escola, 180, 480);
         ctx.drawImage(SPRITES.igreja, 610, 480);
 
-        ctx.drawImage(SPRITES.miguel, player.x, player.y);
-        ctx.drawImage(SPRITES.batman, player.x + 40, player.y + 4);
+        SPRITES.drawMiguel(ctx, player.x, player.y, walkFrame);
+        SPRITES.drawBatman(ctx, player.x + 35, player.y + 2, walkFrame);
 
     } else if (cenaAtual === 'piscina') {
-        // Fundo do Mapa
         ctx.fillStyle = '#27ae60'; ctx.fillRect(0, 0, canvas.width, canvas.height);
         for (let y = 0; y < canvas.height; y += 64) {
-            for (let x = 384; x < 576; x += 64) {
-                ctx.drawImage(SPRITES.estrada, x, y);
-            }
+            ctx.drawImage(SPRITES.calcada, 352, y);
+            ctx.drawImage(SPRITES.calcada, 544, y);
         }
         ctx.drawImage(SPRITES.casa_rosilene, 610, 20);
 
-        // Balão de Conversa
-        const bx = 220;
-        const by = 80;
-        ctx.drawImage(SPRITES.balao_dialogo, bx, by);
+        // Desenha o balão em um tamanho ideal (360x220) recortando a piscina perfeitamente
+        desenharBalaoComPiscina(300, 100, 360, 220);
 
-        // Imagem da Piscina DENTRO do Balão
-        ctx.drawImage(SPRITES.piscina_img, bx + 40, by + 22);
+        SPRITES.drawMiguel(ctx, player.x, player.y, walkFrame);
+        SPRITES.drawBatman(ctx, player.x + 35, player.y + 2, walkFrame);
 
-        // Personagens na frente
-        ctx.drawImage(SPRITES.miguel, player.x, player.y);
-        ctx.drawImage(SPRITES.batman, player.x + 40, player.y + 4);
-
-        // Instrução para retornar
-        ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(10, 10, 320, 36);
+        ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(10, 10, 340, 36);
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px sans-serif';
         ctx.fillText('🏊‍♂️ Piscina no Balão! (Pressione ESC para voltar)', 20, 33);
 
@@ -520,8 +453,8 @@ function draw() {
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px sans-serif';
         ctx.fillText('👴 Brincando com o Vovô! (Pressione ESC para voltar)', 20, 33);
 
-        ctx.drawImage(SPRITES.miguel, player.x, player.y);
-        ctx.drawImage(SPRITES.batman, player.x + 40, player.y + 4);
+        SPRITES.drawMiguel(ctx, player.x, player.y, walkFrame);
+        SPRITES.drawBatman(ctx, player.x + 35, player.y + 2, walkFrame);
     }
 }
 
