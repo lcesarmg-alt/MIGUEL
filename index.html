@@ -2,422 +2,240 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>As Aventuras de Lucas (Mini-Batman) & Miguel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>As Aventuras de Miguel e Batman</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #121212;
+            color: #ffffff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #0b0d12;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        #game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            max-width: 800px;
-            max-height: 600px;
-            background-color: #1a2e1a;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
-            border-radius: 8px;
-        }
-        canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-        }
-        
-        /* UI HUD */
-        .hud {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px 16px;
-            border-radius: 12px;
-            border: 2px solid #ffd700;
-            color: #fff;
-            font-weight: bold;
-            font-size: 14px;
-            z-index: 10;
-        }
-        .status-miguel {
-            color: #64B5F6;
-            background: rgba(30, 136, 229, 0.2);
-            padding: 4px 8px;
-            border-radius: 6px;
-            border: 1px solid #64B5F6;
-        }
-
-        /* Loading Screen */
-        #loading-screen {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #111;
-            color: #ffd700;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            z-index: 100;
-            font-size: 20px;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
         }
-
-        /* Controles Virtuais */
-        .controls {
-            position: absolute;
-            bottom: 15px;
-            left: 15px;
-            display: grid;
-            grid-template-columns: repeat(3, 50px);
-            grid-template-rows: repeat(2, 50px);
-            gap: 6px;
-            z-index: 20;
+        h1 { margin-bottom: 10px; font-size: 24px; color: #ffd700; text-shadow: 2px 2px #000; }
+        #canvas-container {
+            position: relative;
+            border: 4px solid #333;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            background-color: #2e7d32;
         }
-        .btn-dir {
-            background: rgba(255, 255, 255, 0.3);
-            border: 2px solid #fff;
-            border-radius: 10px;
-            color: #fff;
-            font-size: 22px;
+        canvas { display: block; }
+        #ui {
+            margin-top: 15px;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            backdrop-filter: blur(4px);
-        }
-        .btn-dir:active { background: rgba(255, 215, 0, 0.7); }
-        #btn-up { grid-column: 2; grid-row: 1; }
-        #btn-left { grid-column: 1; grid-row: 2; }
-        #btn-down { grid-column: 2; grid-row: 2; }
-        #btn-right { grid-column: 3; grid-row: 2; }
-
-        .btn-action-container {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            z-index: 20;
-        }
-        .btn-action {
-            background: linear-gradient(180deg, #ff9900 0%, #cc6600 100%);
-            border: 3px solid #ffffff;
-            color: white;
+            gap: 15px;
             font-size: 16px;
-            font-weight: bold;
-            padding: 14px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            display: none;
+            background: rgba(0,0,0,0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
         }
+        .controls-hint { margin-top: 8px; color: #aaa; font-size: 13px; }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <div id="loading-screen">
-        <p>🦇 Carregando As Aventuras do Lucas e Miguel...</p>
-        <span style="font-size:14px; color:#aaa; margin-top:10px;">A preparar gráficos Pixel Art HD...</span>
+    <h1>🎮 As Aventuras de Miguel e Batman</h1>
+    <div id="canvas-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
     </div>
-
-    <div class="hud">
-        <div>🦇 HERÓI LUCAS (MINI-BATMAN)</div>
-        <div class="status-miguel" id="miguel-status">🦽 MIGUEL: JUNTO</div>
+    <div id="ui">
+        <div>⭐ Pontuação: <span id="score">0</span></div>
+        <div>❤️ Vidas: <span id="lives">3</span></div>
+        <div>🏆 Nível: <span id="level">1</span></div>
     </div>
-
-    <canvas id="gameCanvas"></canvas>
-
-    <div class="controls">
-        <div class="btn-dir" id="btn-up">▲</div>
-        <div class="btn-dir" id="btn-left">◀</div>
-        <div class="btn-dir" id="btn-down">▼</div>
-        <div class="btn-dir" id="btn-right">▶</div>
-    </div>
-
-    <div class="btn-action-container">
-        <button class="btn-action" id="action-btn">ENTRAR</button>
-    </div>
-</div>
+    <div class="controls-hint">Use as **Setas do Teclado** ou **WASD** para movimentar o Miguel e o Batman!</div>
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = 800;
-    canvas.height = 600;
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-    // --- GERADOR AUTOMÁTICO DE SPRITES PIXEL ART HD EM MEMÓRIA ---
-    function generateHDTexture(type) {
-        const c = document.createElement('canvas');
-        const cx = c.getContext('2d');
+let score = 0;
+let lives = 3;
+let level = 1;
 
-        if (type === 'arvore') {
-            c.width = 64; c.height = 64;
-            // Tronco
-            cx.fillStyle = '#3a200d'; cx.fillRect(26, 42, 12, 22);
-            cx.fillStyle = '#241306'; cx.fillRect(32, 42, 6, 22);
-            // Pinheiro em camadas sombreadas
-            const layers = [
-                { y: 38, r: 26, col1: '#1b4d20', col2: '#123315' },
-                { y: 28, r: 22, col1: '#2e7d32', col2: '#1b5e20' },
-                { y: 18, r: 16, col1: '#4caf50', col2: '#2e7d32' },
-                { y: 10, r: 10, col1: '#81c784', col2: '#4caf50' }
-            ];
-            layers.forEach(l => {
-                cx.fillStyle = l.col1;
-                cx.beginPath(); cx.arc(32, l.y, l.r, 0, Math.PI * 2); cx.fill();
-                cx.fillStyle = l.col2;
-                cx.beginPath(); cx.arc(34, l.y + 2, l.r * 0.7, 0, Math.PI * 2); cx.fill();
-            });
-        } 
-        else if (type === 'estrada') {
-            c.width = 48; c.height = 48;
-            cx.fillStyle = '#616161'; cx.fillRect(0, 0, 48, 48);
-            cx.strokeStyle = '#424242'; cx.lineWidth = 2;
-            for (let i = 0; i <= 48; i += 12) {
-                cx.beginPath(); cx.moveTo(0, i); cx.lineTo(48, i); cx.stroke();
-                cx.beginPath(); cx.moveTo(i, 0); cx.lineTo(i, 48); cx.stroke();
-            }
-            // Textura de pedras soltas
-            cx.fillStyle = '#757575'; cx.fillRect(4, 4, 8, 6); cx.fillRect(16, 16, 8, 6);
-            cx.fillStyle = '#424242'; cx.fillRect(28, 28, 8, 6);
-        }
-        else if (type === 'batman') {
-            c.width = 48; c.height = 48;
-            // Capa
-            cx.fillStyle = '#111'; cx.fillRect(10, 16, 28, 28);
-            // Corpo e Cinto
-            cx.fillStyle = '#212121'; cx.fillRect(14, 12, 20, 26);
-            cx.fillStyle = '#FFD54F'; cx.fillRect(14, 26, 20, 5);
-            // Máscara e Orelhas
-            cx.fillStyle = '#000';
-            cx.beginPath(); cx.moveTo(14, 12); cx.lineTo(18, 2); cx.lineTo(22, 12); cx.fill();
-            cx.beginPath(); cx.moveTo(26, 12); cx.lineTo(30, 2); cx.lineTo(34, 12); cx.fill();
-            // Olhos e Espada
-            cx.fillStyle = '#FFF'; cx.fillRect(18, 14, 4, 3); cx.fillRect(26, 14, 4, 3);
-            cx.fillStyle = '#00E5FF'; cx.fillRect(36, 10, 4, 24); // Espada de Luz Azul
-        }
-        else if (type === 'miguel') {
-            c.width = 48; c.height = 48;
-            // Rodas da Cadeira
-            cx.strokeStyle = '#1565C0'; cx.lineWidth = 4;
-            cx.beginPath(); cx.arc(16, 32, 12, 0, Math.PI * 2); cx.stroke();
-            cx.beginPath(); cx.arc(32, 32, 12, 0, Math.PI * 2); cx.stroke();
-            // Estrutura e Garoto
-            cx.fillStyle = '#424242'; cx.fillRect(16, 20, 16, 14);
-            cx.fillStyle = '#FFCC80'; cx.fillRect(18, 8, 12, 12); // Rosto Miguel
-            cx.fillStyle = '#1E88E5'; cx.fillRect(16, 18, 16, 10); // Camisa
-        }
-        else if (type === 'coringa') {
-            c.width = 48; c.height = 48;
-            cx.fillStyle = '#6A1B9A'; cx.fillRect(14, 14, 20, 26); // Terno Roxo
-            cx.fillStyle = '#2E7D32'; cx.fillRect(16, 4, 16, 8); // Cabelo Verde
-            cx.fillStyle = '#FFFFFF'; cx.fillRect(16, 10, 16, 10); // Maquilhagem Rosto
-            cx.fillStyle = '#FF1744'; cx.fillRect(36, 10, 4, 24); // Espada de Luz Vermelha
-        }
-        else if (type.startsWith('casa') || type === 'escola' || type === 'igreja') {
-            c.width = 140; c.height = 110;
-            // Parede
-            cx.fillStyle = type === 'casaMariangela' ? '#FB8C00' : type === 'casaRosilene' ? '#0288D1' : type === 'escola' ? '#43A047' : '#8E24AA';
-            cx.fillRect(10, 30, 120, 70);
-            cx.strokeStyle = '#212121'; cx.lineWidth = 3; cx.strokeRect(10, 30, 120, 70);
-            // Telhado
-            cx.fillStyle = '#D32F2F';
-            cx.beginPath(); cx.moveTo(0, 30); cx.lineTo(70, 5); cx.lineTo(140, 30); cx.fill(); cx.stroke();
-            // Porta e Janela
-            cx.fillStyle = '#5D4037'; cx.fillRect(55, 65, 30, 35);
-            cx.fillStyle = '#FFF8E1'; cx.fillRect(25, 45, 20, 20); cx.fillRect(95, 45, 20, 20);
-        }
+// Gerador de Texturas/Imagens dinâmicas via Canvas offline
+function criarSprites() {
+    const sprites = {};
 
-        const img = new Image();
-        img.src = c.toDataURL('image/png');
-        return img;
+    // 1. Árvore
+    const cArv = document.createElement('canvas'); cArv.width = 64; cArv.height = 64;
+    const dArv = cArv.getContext('2d');
+    dArv.fillStyle = '#3a200d'; dArv.fillRect(26, 42, 12, 22);
+    dArv.fillStyle = '#1b4d20'; dArv.beginPath(); dArv.arc(32, 36, 26, 0, Math.PI*2); dArv.fill();
+    dArv.fillStyle = '#2e7d32'; dArv.beginPath(); dArv.arc(32, 24, 22, 0, Math.PI*2); dArv.fill();
+    dArv.fillStyle = '#4caf50'; dArv.beginPath(); dArv.arc(32, 12, 16, 0, Math.PI*2); dArv.fill();
+    sprites.arvore = cArv;
+
+    // 2. Estrada
+    const cEst = document.createElement('canvas'); cEst.width = 48; cEst.height = 48;
+    const dEst = cEst.getContext('2d');
+    dEst.fillStyle = '#616161'; dEst.fillRect(0, 0, 48, 48);
+    dEst.strokeStyle = '#424242'; dEst.lineWidth = 2;
+    for(let i=0; i<48; i+=12){ dEst.strokeRect(0, i, 48, 12); }
+    sprites.estrada = cEst;
+
+    // 3. Batman
+    const cBat = document.createElement('canvas'); cBat.width = 48; cBat.height = 48;
+    const dBat = cBat.getContext('2d');
+    dBat.fillStyle = '#111'; dBat.fillRect(10, 16, 28, 28); // Capa
+    dBat.fillStyle = '#212121'; dBat.fillRect(14, 12, 20, 26); // Corpo
+    dBat.fillStyle = '#FFD54F'; dBat.fillRect(14, 26, 20, 5); // Cinto
+    dBat.fillStyle = '#000'; // Máscara/Orelhas
+    dBat.beginPath(); dBat.moveTo(14,12); dBat.lineTo(18,2); dBat.lineTo(22,12); dBat.fill();
+    dBat.beginPath(); dBat.moveTo(26,12); dBat.lineTo(30,2); dBat.lineTo(34,12); dBat.fill();
+    dBat.fillStyle = '#FFF'; dBat.fillRect(18, 14, 4, 3); dBat.fillRect(26, 14, 4, 3); // Olhos
+    dBat.fillStyle = '#00E5FF'; dBat.fillRect(36, 10, 4, 24); // Sabro/Espada de luz
+    sprites.batman = cBat;
+
+    // 4. Miguel (Cadeira de Rodas)
+    const cMig = document.createElement('canvas'); cMig.width = 48; cMig.height = 48;
+    const dMig = cMig.getContext('2d');
+    dMig.strokeStyle = '#1565C0'; dMig.lineWidth = 4;
+    dMig.beginPath(); dMig.arc(16, 32, 12, 0, Math.PI*2); dMig.stroke(); // Roda esq
+    dMig.beginPath(); dMig.arc(32, 32, 12, 0, Math.PI*2); dMig.stroke(); // Roda dir
+    dMig.fillStyle = '#424242'; dMig.fillRect(16, 20, 16, 14); // Assento
+    dMig.fillStyle = '#FFCC80'; dMig.fillRect(18, 8, 12, 12); // Rosto
+    dMig.fillStyle = '#1E88E5'; dMig.fillRect(16, 18, 16, 10); // Camisa
+    sprites.miguel = cMig;
+
+    // 5. Coringa
+    const cCor = document.createElement('canvas'); cCor.width = 48; cCor.height = 48;
+    const dCor = cCor.getContext('2d');
+    dCor.fillStyle = '#6A1B9A'; dCor.fillRect(14, 14, 20, 26); // Terno
+    dCor.fillStyle = '#2E7D32'; dCor.fillRect(16, 4, 16, 8);   // Cabelo
+    dCor.fillStyle = '#FFFFFF'; dCor.fillRect(16, 10, 16, 10); // Rosto
+    dCor.fillStyle = '#FF1744'; dCor.fillRect(36, 10, 4, 24);  // Espada Vermelha
+    sprites.coringa = cCor;
+
+    // Função interna para criar Prédios/Casas
+    function criarConstrucao(corParede, rotulo) {
+        const cB = document.createElement('canvas'); cB.width = 140; cB.height = 110;
+        const dB = cB.getContext('2d');
+        dB.fillStyle = corParede; dB.fillRect(10, 30, 120, 70);
+        dB.strokeStyle = '#212121'; dB.lineWidth = 3; dB.strokeRect(10, 30, 120, 70);
+        // Telhado
+        dB.fillStyle = '#D32F2F';
+        dB.beginPath(); dB.moveTo(0,30); dB.lineTo(70,5); dB.lineTo(140,30); dB.closePath(); dB.fill(); dB.stroke();
+        // Porta
+        dB.fillStyle = '#5D4037'; dB.fillRect(55, 65, 30, 35);
+        // Janelas
+        dB.fillStyle = '#FFF8E1'; dB.fillRect(25, 45, 20, 20); dB.fillRect(95, 45, 20, 20);
+        // Placa
+        dB.fillStyle = '#FFF'; dB.fillRect(20, 100, 100, 10);
+        dB.fillStyle = '#000'; dB.font = 'bold 9px sans-serif'; dB.textAlign = 'center';
+        dB.fillText(rotulo, 70, 108);
+        return cB;
     }
 
-    // --- CARREGADOR DE IMAGENS DO GITHUB PAGES COM FALLBACK HD ---
-    const assets = {};
-    const assetSources = {
-        batman: 'imagens/batman.png',
-        miguel: 'imagens/miguel.png',
-        coringa: 'imagens/coringa.png',
-        arvore: 'imagens/arvore.png',
-        estrada: 'imagens/estrada.png',
-        casaMariangela: 'imagens/casa_mariangela.png',
-        casaRosilene: 'imagens/casa_rosilene.png',
-        escola: 'imagens/escola.png',
-        igreja: 'imagens/igreja.png'
-    };
+    sprites.casa_mariangela = criarConstrucao('#FB8C00', 'Casa Mariangela');
+    sprites.casa_rosilene = criarConstrucao('#0288D1', 'Casa Rosilene');
+    sprites.escola = criarConstrucao('#43A047', 'Escola');
+    sprites.igreja = criarConstrucao('#8E24AA', 'Igreja');
 
-    let loadedAssetsCount = 0;
-    const totalAssets = Object.keys(assetSources).length;
+    return sprites;
+}
 
-    function loadAssets(onComplete) {
-        for (let key in assetSources) {
-            assets[key] = new Image();
-            assets[key].src = assetSources[key];
-            
-            assets[key].onload = () => {
-                loadedAssetsCount++;
-                if (loadedAssetsCount === totalAssets) onComplete();
-            };
-            
-            // Se o ficheiro .png não existir na pasta do GitHub, gera o Sprite HD automaticamente
-            assets[key].onerror = () => {
-                assets[key] = generateHDTexture(key);
-                loadedAssetsCount++;
-                if (loadedAssetsCount === totalAssets) onComplete();
-            };
+const SPRITES = criarSprites();
+
+// Posição do jogador
+const player = {
+    x: 376,
+    y: 276,
+    speed: 4,
+    size: 48
+};
+
+// Posição do Vilão (Coringa)
+const enemy = {
+    x: 100,
+    y: 100,
+    speed: 1.5,
+    size: 48
+};
+
+// Mapeamento do Teclado
+const keys = {};
+window.addEventListener('keydown', e => keys[e.key] = true);
+window.addEventListener('keyup', e => keys[e.key] = false);
+
+function update() {
+    if (keys['ArrowUp'] || keys['w'] || keys['W']) player.y -= player.speed;
+    if (keys['ArrowDown'] || keys['s'] || keys['S']) player.y += player.speed;
+    if (keys['ArrowLeft'] || keys['a'] || keys['A']) player.x -= player.speed;
+    if (keys['ArrowRight'] || keys['d'] || keys['D']) player.x += player.speed;
+
+    // Limites da tela
+    player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
+    player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
+
+    // Perseguição do Coringa
+    if (enemy.x < player.x) enemy.x += enemy.speed;
+    if (enemy.x > player.x) enemy.x -= enemy.speed;
+    if (enemy.y < player.y) enemy.y += enemy.speed;
+    if (enemy.y > player.y) enemy.y -= enemy.speed;
+
+    // Colisão do Coringa com o Miguel/Batman
+    const dist = Math.hypot((player.x + 24) - (enemy.x + 24), (player.y + 24) - (enemy.y + 24));
+    if (dist < 32) {
+        lives--;
+        document.getElementById('lives').textContent = lives;
+        player.x = 376; player.y = 276;
+        enemy.x = 50; enemy.y = 50;
+        if (lives <= 0) {
+            alert("Fim de Jogo! O Miguel e o Batman vão tentar novamente!");
+            score = 0; lives = 3;
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
         }
     }
+}
 
-    const game = {
-        player: { x: 380, y: 300, speed: 4, width: 48, height: 48 },
-        miguel: { x: 330, y: 300, width: 48, height: 48 },
-        joker: { x: 376, y: 180, active: true, width: 48, height: 48 },
-        keys: { up: false, down: false, left: false, right: false }
-    };
+function draw() {
+    // 1. Gramado (Fundo)
+    ctx.fillStyle = '#2e7d32';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const locations = [
-        { name: 'Casa Vovó Mariângela', x: 80, y: 80, w: 140, h: 110, key: 'casaMariangela' },
-        { name: 'Casa Vovó Rosilene', x: 580, y: 80, w: 140, h: 110, key: 'casaRosilene' },
-        { name: 'Escola dos Heróis', x: 80, y: 400, w: 140, h: 110, key: 'escola' },
-        { name: 'Igreja', x: 580, y: 400, w: 140, h: 110, key: 'igreja' }
-    ];
-
-    function setupControls() {
-        const bind = (id, key) => {
-            const el = document.getElementById(id);
-            const start = (e) => { e.preventDefault(); game.keys[key] = true; };
-            const end = (e) => { e.preventDefault(); game.keys[key] = false; };
-            el.addEventListener('touchstart', start);
-            el.addEventListener('touchend', end);
-            el.addEventListener('mousedown', start);
-            el.addEventListener('mouseup', end);
-        };
-        bind('btn-up', 'up');
-        bind('btn-down', 'down');
-        bind('btn-left', 'left');
-        bind('btn-right', 'right');
-
-        window.addEventListener('keydown', e => {
-            if (e.key === 'ArrowUp' || e.key === 'w') game.keys.up = true;
-            if (e.key === 'ArrowDown' || e.key === 's') game.keys.down = true;
-            if (e.key === 'ArrowLeft' || e.key === 'a') game.keys.left = true;
-            if (e.key === 'ArrowRight' || e.key === 'd') game.keys.right = true;
-        });
-        window.addEventListener('keyup', e => {
-            if (e.key === 'ArrowUp' || e.key === 'w') game.keys.up = false;
-            if (e.key === 'ArrowDown' || e.key === 's') game.keys.down = false;
-            if (e.key === 'ArrowLeft' || e.key === 'a') game.keys.left = false;
-            if (e.key === 'ArrowRight' || e.key === 'd') game.keys.right = false;
-        });
+    // 2. Estradas
+    for(let x = 0; x < canvas.width; x += 48) {
+        ctx.drawImage(SPRITES.estrada, x, 276);
+    }
+    for(let y = 0; y < canvas.height; y += 48) {
+        ctx.drawImage(SPRITES.estrada, 376, y);
     }
 
-    function update() {
-        let dx = 0, dy = 0;
-        if (game.keys.up) dy -= game.player.speed;
-        if (game.keys.down) dy += game.player.speed;
-        if (game.keys.left) dx -= game.player.speed;
-        if (game.keys.right) dx += game.player.speed;
+    // 3. Edifícios
+    ctx.drawImage(SPRITES.casa_mariangela, 40, 40);
+    ctx.drawImage(SPRITES.casa_rosilene, 620, 40);
+    ctx.drawImage(SPRITES.escola, 40, 440);
+    ctx.drawImage(SPRITES.igreja, 620, 440);
 
-        game.player.x = Math.max(50, Math.min(700, game.player.x + dx));
-        game.player.y = Math.max(50, Math.min(500, game.player.y + dy));
+    // 4. Árvores decorativas
+    ctx.drawImage(SPRITES.arvore, 240, 80);
+    ctx.drawImage(SPRITES.arvore, 500, 80);
+    ctx.drawImage(SPRITES.arvore, 240, 460);
+    ctx.drawImage(SPRITES.arvore, 500, 460);
 
-        const targetX = game.player.x - 40;
-        const targetY = game.player.y;
-        game.miguel.x += (targetX - game.miguel.x) * 0.12;
-        game.miguel.y += (targetY - game.miguel.y) * 0.12;
+    // 5. Coringa (Inimigo)
+    ctx.drawImage(SPRITES.coringa, enemy.x, enemy.y);
 
-        const actionBtn = document.getElementById('action-btn');
-        let nearLocation = null;
-        locations.forEach(loc => {
-            if (Math.hypot((game.player.x + 24) - (loc.x + loc.w/2), (game.player.y + 24) - (loc.y + loc.h/2)) < 80) {
-                nearLocation = loc;
-            }
-        });
+    // 6. Miguel e Batman (Lado a Lado)
+    ctx.drawImage(SPRITES.miguel, player.x, player.y);
+    ctx.drawImage(SPRITES.batman, player.x + 28, player.y - 10);
+}
 
-        if (nearLocation) {
-            actionBtn.style.display = 'block';
-            actionBtn.innerText = `ENTRAR EM ${nearLocation.name.toUpperCase()}`;
-            actionBtn.onclick = () => alert(`Entrando em ${nearLocation.name}...`);
-        } else if (game.joker.active && Math.hypot(game.player.x - game.joker.x, game.player.y - game.joker.y) < 60) {
-            actionBtn.style.display = 'block';
-            actionBtn.innerText = '⚔️ DUELAR COM CORINGA!';
-            actionBtn.onclick = () => {
-                alert('💥 O Lucas e o Miguel derrotaram o Coringa juntos!');
-                game.joker.active = false;
-            };
-        } else {
-            actionBtn.style.display = 'none';
-        }
-    }
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
 
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Gramado de fundo
-        ctx.fillStyle = '#2e5a27';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Estrada
-        for (let y = 0; y < canvas.height; y += 48) {
-            ctx.drawImage(assets.estrada, 376, y, 48, 48);
-        }
-        for (let x = 80; x < 720; x += 48) {
-            ctx.drawImage(assets.estrada, x, 276, 48, 48);
-        }
-
-        // Árvores nas Laterais
-        for (let y = 0; y < canvas.height; y += 50) {
-            ctx.drawImage(assets.arvore, 0, y, 64, 64);
-            ctx.drawImage(assets.arvore, 736, y, 64, 64);
-        }
-
-        // Construções
-        locations.forEach(loc => {
-            ctx.drawImage(assets[loc.key], loc.x, loc.y, loc.w, loc.h);
-        });
-
-        // Coringa
-        if (game.joker.active) {
-            ctx.drawImage(assets.coringa, game.joker.x, game.joker.y, game.joker.width, game.joker.height);
-        }
-
-        // Miguel
-        ctx.drawImage(assets.miguel, game.miguel.x, game.miguel.y, game.miguel.width, game.miguel.height);
-
-        // Batman (Lucas)
-        ctx.drawImage(assets.batman, game.player.x, game.player.y, game.player.width, game.player.height);
-    }
-
-    function loop() {
-        update();
-        draw();
-        requestAnimationFrame(loop);
-    }
-
-    loadAssets(() => {
-        document.getElementById('loading-screen').style.display = 'none';
-        setupControls();
-        loop();
-    });
+loop();
 </script>
 </body>
 </html>
