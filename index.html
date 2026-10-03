@@ -30,16 +30,18 @@
             max-height: 600px;
             background-color: #1a2e1a;
             overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            border-radius: 8px;
         }
         canvas {
             width: 100%;
             height: 100%;
             display: block;
-            image-rendering: pixelated; /* Mantém o pixel art super nítido */
+            image-rendering: pixelated;
             image-rendering: crisp-edges;
         }
         
-        /* UI Overlay */
+        /* UI HUD */
         .hud {
             position: absolute;
             top: 10px;
@@ -48,7 +50,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.8);
             padding: 10px 16px;
             border-radius: 12px;
             border: 2px solid #ffd700;
@@ -133,7 +135,7 @@
 <div id="game-container">
     <div id="loading-screen">
         <p>🦇 Carregando As Aventuras do Lucas e Miguel...</p>
-        <span style="font-size:14px; color:#aaa; margin-top:10px;">A carregar imagens em alta definição...</span>
+        <span style="font-size:14px; color:#aaa; margin-top:10px;">A preparar gráficos Pixel Art HD...</span>
     </div>
 
     <div class="hud">
@@ -161,18 +163,106 @@
     canvas.width = 800;
     canvas.height = 600;
 
-    // --- CARREGADOR DE IMAGENS (IMAGE LOADER) ---
+    // --- GERADOR AUTOMÁTICO DE SPRITES PIXEL ART HD EM MEMÓRIA ---
+    function generateHDTexture(type) {
+        const c = document.createElement('canvas');
+        const cx = c.getContext('2d');
+
+        if (type === 'arvore') {
+            c.width = 64; c.height = 64;
+            // Tronco
+            cx.fillStyle = '#3a200d'; cx.fillRect(26, 42, 12, 22);
+            cx.fillStyle = '#241306'; cx.fillRect(32, 42, 6, 22);
+            // Pinheiro em camadas sombreadas
+            const layers = [
+                { y: 38, r: 26, col1: '#1b4d20', col2: '#123315' },
+                { y: 28, r: 22, col1: '#2e7d32', col2: '#1b5e20' },
+                { y: 18, r: 16, col1: '#4caf50', col2: '#2e7d32' },
+                { y: 10, r: 10, col1: '#81c784', col2: '#4caf50' }
+            ];
+            layers.forEach(l => {
+                cx.fillStyle = l.col1;
+                cx.beginPath(); cx.arc(32, l.y, l.r, 0, Math.PI * 2); cx.fill();
+                cx.fillStyle = l.col2;
+                cx.beginPath(); cx.arc(34, l.y + 2, l.r * 0.7, 0, Math.PI * 2); cx.fill();
+            });
+        } 
+        else if (type === 'estrada') {
+            c.width = 48; c.height = 48;
+            cx.fillStyle = '#616161'; cx.fillRect(0, 0, 48, 48);
+            cx.strokeStyle = '#424242'; cx.lineWidth = 2;
+            for (let i = 0; i <= 48; i += 12) {
+                cx.beginPath(); cx.moveTo(0, i); cx.lineTo(48, i); cx.stroke();
+                cx.beginPath(); cx.moveTo(i, 0); cx.lineTo(i, 48); cx.stroke();
+            }
+            // Textura de pedras soltas
+            cx.fillStyle = '#757575'; cx.fillRect(4, 4, 8, 6); cx.fillRect(16, 16, 8, 6);
+            cx.fillStyle = '#424242'; cx.fillRect(28, 28, 8, 6);
+        }
+        else if (type === 'batman') {
+            c.width = 48; c.height = 48;
+            // Capa
+            cx.fillStyle = '#111'; cx.fillRect(10, 16, 28, 28);
+            // Corpo e Cinto
+            cx.fillStyle = '#212121'; cx.fillRect(14, 12, 20, 26);
+            cx.fillStyle = '#FFD54F'; cx.fillRect(14, 26, 20, 5);
+            // Máscara e Orelhas
+            cx.fillStyle = '#000';
+            cx.beginPath(); cx.moveTo(14, 12); cx.lineTo(18, 2); cx.lineTo(22, 12); cx.fill();
+            cx.beginPath(); cx.moveTo(26, 12); cx.lineTo(30, 2); cx.lineTo(34, 12); cx.fill();
+            // Olhos e Espada
+            cx.fillStyle = '#FFF'; cx.fillRect(18, 14, 4, 3); cx.fillRect(26, 14, 4, 3);
+            cx.fillStyle = '#00E5FF'; cx.fillRect(36, 10, 4, 24); // Espada de Luz Azul
+        }
+        else if (type === 'miguel') {
+            c.width = 48; c.height = 48;
+            // Rodas da Cadeira
+            cx.strokeStyle = '#1565C0'; cx.lineWidth = 4;
+            cx.beginPath(); cx.arc(16, 32, 12, 0, Math.PI * 2); cx.stroke();
+            cx.beginPath(); cx.arc(32, 32, 12, 0, Math.PI * 2); cx.stroke();
+            // Estrutura e Garoto
+            cx.fillStyle = '#424242'; cx.fillRect(16, 20, 16, 14);
+            cx.fillStyle = '#FFCC80'; cx.fillRect(18, 8, 12, 12); // Rosto Miguel
+            cx.fillStyle = '#1E88E5'; cx.fillRect(16, 18, 16, 10); // Camisa
+        }
+        else if (type === 'coringa') {
+            c.width = 48; c.height = 48;
+            cx.fillStyle = '#6A1B9A'; cx.fillRect(14, 14, 20, 26); // Terno Roxo
+            cx.fillStyle = '#2E7D32'; cx.fillRect(16, 4, 16, 8); // Cabelo Verde
+            cx.fillStyle = '#FFFFFF'; cx.fillRect(16, 10, 16, 10); // Maquilhagem Rosto
+            cx.fillStyle = '#FF1744'; cx.fillRect(36, 10, 4, 24); // Espada de Luz Vermelha
+        }
+        else if (type.startsWith('casa') || type === 'escola' || type === 'igreja') {
+            c.width = 140; c.height = 110;
+            // Parede
+            cx.fillStyle = type === 'casaMariangela' ? '#FB8C00' : type === 'casaRosilene' ? '#0288D1' : type === 'escola' ? '#43A047' : '#8E24AA';
+            cx.fillRect(10, 30, 120, 70);
+            cx.strokeStyle = '#212121'; cx.lineWidth = 3; cx.strokeRect(10, 30, 120, 70);
+            // Telhado
+            cx.fillStyle = '#D32F2F';
+            cx.beginPath(); cx.moveTo(0, 30); cx.lineTo(70, 5); cx.lineTo(140, 30); cx.fill(); cx.stroke();
+            // Porta e Janela
+            cx.fillStyle = '#5D4037'; cx.fillRect(55, 65, 30, 35);
+            cx.fillStyle = '#FFF8E1'; cx.fillRect(25, 45, 20, 20); cx.fillRect(95, 45, 20, 20);
+        }
+
+        const img = new Image();
+        img.src = c.toDataURL('image/png');
+        return img;
+    }
+
+    // --- CARREGADOR DE IMAGENS DO GITHUB PAGES COM FALLBACK HD ---
     const assets = {};
     const assetSources = {
-        batman: 'batman.png',
-        miguel: 'miguel.png',
-        coringa: 'coringa.png',
-        arvore: 'arvore.png',
-        estrada: 'estrada.png',
-        casaMariangela: 'casa_mariangela.png',
-        casaRosilene: 'casa_rosilene.png',
-        escola: 'escola.png',
-        igreja: 'igreja.png'
+        batman: 'imagens/batman.png',
+        miguel: 'imagens/miguel.png',
+        coringa: 'imagens/coringa.png',
+        arvore: 'imagens/arvore.png',
+        estrada: 'imagens/estrada.png',
+        casaMariangela: 'imagens/casa_mariangela.png',
+        casaRosilene: 'imagens/casa_rosilene.png',
+        escola: 'imagens/escola.png',
+        igreja: 'imagens/igreja.png'
     };
 
     let loadedAssetsCount = 0;
@@ -182,23 +272,21 @@
         for (let key in assetSources) {
             assets[key] = new Image();
             assets[key].src = assetSources[key];
+            
             assets[key].onload = () => {
                 loadedAssetsCount++;
-                if (loadedAssetsCount === totalAssets) {
-                    onComplete();
-                }
+                if (loadedAssetsCount === totalAssets) onComplete();
             };
-            // Tratamento caso a imagem falhe (fallback silencioso)
+            
+            // Se o ficheiro .png não existir na pasta do GitHub, gera o Sprite HD automaticamente
             assets[key].onerror = () => {
+                assets[key] = generateHDTexture(key);
                 loadedAssetsCount++;
-                if (loadedAssetsCount === totalAssets) {
-                    onComplete();
-                }
+                if (loadedAssetsCount === totalAssets) onComplete();
             };
         }
     }
 
-    // ESTADO DO JOGO
     const game = {
         player: { x: 380, y: 300, speed: 4, width: 48, height: 48 },
         miguel: { x: 330, y: 300, width: 48, height: 48 },
@@ -213,7 +301,6 @@
         { name: 'Igreja', x: 580, y: 400, w: 140, h: 110, key: 'igreja' }
     ];
 
-    // CONTROLES
     function setupControls() {
         const bind = (id, key) => {
             const el = document.getElementById(id);
@@ -253,13 +340,11 @@
         game.player.x = Math.max(50, Math.min(700, game.player.x + dx));
         game.player.y = Math.max(50, Math.min(500, game.player.y + dy));
 
-        // Miguel Acompanha o Lucas
         const targetX = game.player.x - 40;
         const targetY = game.player.y;
         game.miguel.x += (targetX - game.miguel.x) * 0.12;
         game.miguel.y += (targetY - game.miguel.y) * 0.12;
 
-        // Botão de Ação
         const actionBtn = document.getElementById('action-btn');
         let nearLocation = null;
         locations.forEach(loc => {
@@ -287,59 +372,39 @@
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Gramado
+        // Gramado de fundo
         ctx.fillStyle = '#2e5a27';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Desenhar Estrada PNG
-        if (assets.estrada.complete && assets.estrada.naturalWidth !== 0) {
-            for (let y = 0; y < canvas.height; y += 48) {
-                ctx.drawImage(assets.estrada, 376, y, 48, 48);
-            }
-            for (let x = 80; x < 720; x += 48) {
-                ctx.drawImage(assets.estrada, x, 276, 48, 48);
-            }
+        // Estrada
+        for (let y = 0; y < canvas.height; y += 48) {
+            ctx.drawImage(assets.estrada, 376, y, 48, 48);
+        }
+        for (let x = 80; x < 720; x += 48) {
+            ctx.drawImage(assets.estrada, x, 276, 48, 48);
         }
 
-        // Desenhar Árvores PNG nas Laterais
-        if (assets.arvore.complete && assets.arvore.naturalWidth !== 0) {
-            for (let y = 0; y < canvas.height; y += 50) {
-                ctx.drawImage(assets.arvore, 0, y, 64, 64);
-                ctx.drawImage(assets.arvore, 736, y, 64, 64);
-            }
+        // Árvores nas Laterais
+        for (let y = 0; y < canvas.height; y += 50) {
+            ctx.drawImage(assets.arvore, 0, y, 64, 64);
+            ctx.drawImage(assets.arvore, 736, y, 64, 64);
         }
 
-        // Desenhar Construções PNG
+        // Construções
         locations.forEach(loc => {
-            const img = assets[loc.key];
-            if (img && img.complete && img.naturalWidth !== 0) {
-                ctx.drawImage(img, loc.x, loc.y, loc.w, loc.h);
-            } else {
-                // Fallback de texto se a imagem não existir
-                ctx.fillStyle = '#4a6b46';
-                ctx.fillRect(loc.x, loc.y, loc.w, loc.h);
-                ctx.fillStyle = '#fff';
-                ctx.font = '12px sans-serif';
-                ctx.fillText(loc.name, loc.x + 10, loc.y + 50);
-            }
+            ctx.drawImage(assets[loc.key], loc.x, loc.y, loc.w, loc.h);
         });
 
-        // Desenhar Coringa PNG
+        // Coringa
         if (game.joker.active) {
-            if (assets.coringa.complete && assets.coringa.naturalWidth !== 0) {
-                ctx.drawImage(assets.coringa, game.joker.x, game.joker.y, game.joker.width, game.joker.height);
-            }
+            ctx.drawImage(assets.coringa, game.joker.x, game.joker.y, game.joker.width, game.joker.height);
         }
 
-        // Desenhar Miguel PNG
-        if (assets.miguel.complete && assets.miguel.naturalWidth !== 0) {
-            ctx.drawImage(assets.miguel, game.miguel.x, game.miguel.y, game.miguel.width, game.miguel.height);
-        }
+        // Miguel
+        ctx.drawImage(assets.miguel, game.miguel.x, game.miguel.y, game.miguel.width, game.miguel.height);
 
-        // Desenhar Batman (Lucas) PNG
-        if (assets.batman.complete && assets.batman.naturalWidth !== 0) {
-            ctx.drawImage(assets.batman, game.player.x, game.player.y, game.player.width, game.player.height);
-        }
+        // Batman (Lucas)
+        ctx.drawImage(assets.batman, game.player.x, game.player.y, game.player.width, game.player.height);
     }
 
     function loop() {
@@ -348,7 +413,6 @@
         requestAnimationFrame(loop);
     }
 
-    // Iniciar Carregamento
     loadAssets(() => {
         document.getElementById('loading-screen').style.display = 'none';
         setupControls();
