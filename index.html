@@ -39,21 +39,28 @@
         }
         .hint { margin-top: 6px; color: #aaa; font-size: 13px; }
 
-        /* Modal Interativo */
-        #interactive-modal {
+        /* Contêiner do Modal + Balão lado a lado */
+        #modal-container-wrapper {
             display: none;
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            flex-direction: row;
+            align-items: center;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        /* Modal Interativo */
+        #interactive-modal {
             background: rgba(15, 23, 42, 0.95);
             border: 3px solid #0277bd;
             border-radius: 12px;
             padding: 24px;
             text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            z-index: 10;
-            width: 340px;
+            width: 300px;
         }
         #interactive-modal h2 {
             color: #4fc3f7;
@@ -77,6 +84,12 @@
         .modal-btn:hover { background: #039be5; }
         .modal-btn.close { background: #546e7a; margin-top: 15px; }
         .modal-btn.close:hover { background: #78909c; }
+
+        /* Canvas do Balão da Piscina acoplado ao lado do menu */
+        #balloon-canvas-preview {
+            border-radius: 8px;
+            background: transparent;
+        }
     </style>
 </head>
 <body>
@@ -85,12 +98,18 @@
     <div id="canvas-container">
         <canvas id="gameCanvas" width="960" height="640"></canvas>
 
-        <div id="interactive-modal">
-            <h2 id="modal-title">🏡 Casa da Vovó Rosilene</h2>
-            <p style="margin-bottom: 15px; color: #ddd; font-size: 14px;">O que os meninos querem fazer agora?</p>
-            <button class="modal-btn" onclick="escolherOpcao('piscina')">🏊‍♂️ Ir para a Piscina</button>
-            <button class="modal-btn" onclick="escolherOpcao('vovo')">👴 Brincar com o Vovô</button>
-            <button class="modal-btn close" onclick="fecharModal()">Voltar ao Mapa</button>
+        <!-- Menu e Balão da Piscina ao Lado Direito -->
+        <div id="modal-container-wrapper">
+            <div id="interactive-modal">
+                <h2 id="modal-title">🏡 Casa da Vovó Rosilene</h2>
+                <p style="margin-bottom: 15px; color: #ddd; font-size: 14px;">O que os meninos querem fazer agora?</p>
+                <button class="modal-btn" onclick="escolherOpcao('piscina')">🏊‍♂️ Ir para a Piscina</button>
+                <button class="modal-btn" onclick="escolherOpcao('vovo')">👴 Brincar com o Vovô</button>
+                <button class="modal-btn close" onclick="fecharModal()">Voltar ao Mapa</button>
+            </div>
+
+            <!-- Canvas que desenha o balão da piscina ao lado do menu -->
+            <canvas id="balloon-canvas-preview" width="360" height="230"></canvas>
         </div>
     </div>
 
@@ -105,6 +124,9 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+const balloonCanvas = document.getElementById('balloon-canvas-preview');
+const balloonCtx = balloonCanvas.getContext('2d');
+
 let cenaAtual = 'mapa';
 let modalAberto = false;
 
@@ -116,25 +138,68 @@ let isWalking = false;
 function gerarSprites() {
     const s = {};
 
-    // 1. Árvore Redesenhada (sem silhueta estranha)
+    // 1. ÁRVORE ORIGINAL EM MATRIZ DE PIXELS (Estilo das 3 atualizações atrás)
     const cTree = document.createElement('canvas'); 
-    cTree.width = 64; cTree.height = 80;
+    cTree.width = 64; cTree.height = 96;
     const dT = cTree.getContext('2d');
-    
-    // Tronco
-    dT.fillStyle = '#5c3a21';
-    dT.fillRect(26, 44, 12, 32);
-    dT.fillStyle = '#3d2314';
-    dT.fillRect(34, 44, 4, 32);
-
-    // Copa Verde Arredondada
-    dT.fillStyle = '#1e7b23';
-    dT.beginPath(); dT.arc(32, 28, 26, 0, Math.PI * 2); dT.fill();
-    dT.fillStyle = '#2bb333';
-    dT.beginPath(); dT.arc(28, 22, 20, 0, Math.PI * 2); dT.fill();
-    dT.fillStyle = '#4ae252';
-    dT.beginPath(); dT.arc(24, 18, 12, 0, Math.PI * 2); dT.fill();
-
+    const pixelMapTree = [
+        ".................BBBB...........",
+        "...............BBGGGBB..........",
+        "..............BGGGGGGGB.........",
+        "............BBGGGGGGGGGBB.......",
+        "...........BGGGGGGGGGGGGGB......",
+        "..........BGGGGGGGGGGGGGGGB.....",
+        ".........BGGGGGGGGGGGGGGGGGB....",
+        "........BGGGGBBBGGGGGGGGGGGB....",
+        "........BGGGBBBBGGGGGBBBGGGB....",
+        ".......BGGGGBBBBBGGGBBBBGGGGB...",
+        "......BGGGGGBBBBBBGGBBBBBGGGB...",
+        "......BGGGGGGBBBBBBBBBBBGGGGB...",
+        ".....BGGGGGGGBBBBBBBBBBBGGGGGB..",
+        ".....BGGGGGGGGBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGGGBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGGGBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGGGBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGBBBBBBBBBBBBGGGGGB..",
+        "....BGGGGGGGBBBBBBBBBBBBGGGGGB..",
+        ".....BGGGGGGBBBBBBBBBBBBGGGGGB..",
+        ".....BGGGGGGGBBBBBBBBBBGGGGGB...",
+        "......BGGGGGGGBBBBBBBBGGGGGB....",
+        "......BGGGGGGGGBBBBBGGGGGGGB....",
+        ".......BGGGGGGGGGGGGGGGGGGGB....",
+        "........BGGGGGGGGGGGGGGGGGB.....",
+        ".........BBGGGGGGGGGGGGGBB......",
+        "...........BBGGGGGGGGGBB........",
+        ".............BBBBBBBBB..........",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "...............BTTTB............",
+        "..............BBTTTBB...........",
+        ".............BTTTTTTTB..........",
+        ".............BGGGGGGGB..........",
+        "..............BBBBBBB..........."
+    ];
+    const scaleTree = 2;
+    for (let r = 0; r < pixelMapTree.length; r++) {
+        for (let c = 0; c < pixelMapTree[r].length; c++) {
+            const char = pixelMapTree[r][c];
+            if (char === '.') continue;
+            if (char === 'B') dT.fillStyle = '#000000';
+            else if (char === 'G') {
+                if (r < 10) dT.fillStyle = '#4ae24a';
+                else if (r < 20) dT.fillStyle = '#22b14c';
+                else dT.fillStyle = '#158033';
+            }
+            else if (char === 'T') dT.fillStyle = '#8b4513';
+            dT.fillRect(c * scaleTree, r * scaleTree, scaleTree, scaleTree);
+        }
+    }
     s.arvore = cTree;
 
     // 2. Estrada e Calçada
@@ -157,7 +222,7 @@ function gerarSprites() {
     }
     s.calcada = cSidewalk;
 
-    // 3. BATMAN TOTALMENTE REFEITO (Alto, imponente, com orelhas pontiagudas e capa)
+    // 3. BATMAN DE ALTA DEFINIÇÃO (Sem formato de rato, orelhas pontiagudas, capa e cinto)
     s.drawBatman = function(ctx, x, y, frame) {
         const offsetLeft = (frame === 1) ? -2 : 0;
         const offsetRight = (frame === 2) ? 2 : 0;
@@ -165,7 +230,7 @@ function gerarSprites() {
         ctx.save();
         ctx.translate(x, y);
 
-        // Capa atrás
+        // Capa
         ctx.fillStyle = '#111318';
         ctx.beginPath();
         ctx.moveTo(2, 14);
@@ -184,17 +249,17 @@ function gerarSprites() {
         ctx.fillRect(7, 43 + offsetLeft, 8, 5);
         ctx.fillRect(17, 43 + offsetRight, 8, 5);
 
-        // Tronco (Cinza Escuro com Cinto Amarelo)
+        // Tronco
         ctx.fillStyle = '#3a3f4d';
         ctx.fillRect(8, 14, 16, 20);
 
-        // Cinto de Utilidades
+        // Cinto de Utilidades Ouro
         ctx.fillStyle = '#fbc02d';
         ctx.fillRect(7, 28, 18, 4);
         ctx.fillStyle = '#f57f17';
         ctx.fillRect(13, 27, 6, 6);
 
-        // Símbolo do Batman no Peito
+        // Símbolo do Peito
         ctx.fillStyle = '#0a0b0e';
         ctx.beginPath();
         ctx.ellipse(16, 20, 5, 3, 0, 0, Math.PI * 2);
@@ -205,22 +270,21 @@ function gerarSprites() {
         ctx.fillRect(4, 15, 4, 14);
         ctx.fillRect(24, 15, 4, 14);
 
-        // Cabeça e Máscara
+        // Máscara e Capuz
         ctx.fillStyle = '#111318';
-        // Base da Cabeça
         ctx.fillRect(9, 4, 14, 11);
         
-        // Orelhas Pontiagudas do Batman (Bem altas e distintas)
+        // Orelhas Pontiagudas do Batman
         ctx.beginPath();
-        ctx.moveTo(9, 6); ctx.lineTo(8, -3); ctx.lineTo(12, 4); ctx.closePath(); ctx.fill();
+        ctx.moveTo(9, 6); ctx.lineTo(8, -4); ctx.lineTo(12, 4); ctx.closePath(); ctx.fill();
         ctx.beginPath();
-        ctx.moveTo(23, 6); ctx.lineTo(24, -3); ctx.lineTo(20, 4); ctx.closePath(); ctx.fill();
+        ctx.moveTo(23, 6); ctx.lineTo(24, -4); ctx.lineTo(20, 4); ctx.closePath(); ctx.fill();
 
-        // Queixo / Rosto à mostra
+        // Rosto à mostra
         ctx.fillStyle = '#ffcc80';
         ctx.fillRect(12, 10, 8, 5);
 
-        // Olhos Brancos do Capuz (Angulados)
+        // Olhos Brancos Angulados
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.moveTo(10, 7); ctx.lineTo(14, 8); ctx.lineTo(11, 9); ctx.closePath(); ctx.fill();
@@ -276,44 +340,30 @@ function gerarSprites() {
     s.escola = criarPredio('#2e7d32', 'Escola');
     s.igreja = criarPredio('#6a1b9a', 'Igreja');
 
-    // 6. Desenho da Piscina
-    const cPiscina = document.createElement('canvas'); cPiscina.width = 400; cPiscina.height = 240;
+    // 6. Imagem Interna da Piscina
+    const cPiscina = document.createElement('canvas'); cPiscina.width = 340; cPiscina.height = 200;
     const dP = cPiscina.getContext('2d');
 
-    dP.fillStyle = '#87ceeb'; dP.fillRect(0, 0, 400, 90);
+    dP.fillStyle = '#87ceeb'; dP.fillRect(0, 0, 340, 70);
     dP.fillStyle = '#4caf50';
-    dP.beginPath(); dP.arc(60, 80, 40, 0, Math.PI*2); dP.arc(100, 75, 50, 0, Math.PI*2); dP.fill();
-    dP.beginPath(); dP.arc(280, 80, 35, 0, Math.PI*2); dP.arc(320, 70, 45, 0, Math.PI*2); dP.arc(360, 85, 35, 0, Math.PI*2); dP.fill();
+    dP.beginPath(); dP.arc(50, 60, 30, 0, Math.PI*2); dP.arc(80, 55, 40, 0, Math.PI*2); dP.fill();
+    dP.beginPath(); dP.arc(240, 60, 30, 0, Math.PI*2); dP.arc(280, 50, 35, 0, Math.PI*2); dP.fill();
 
-    dP.fillStyle = '#ffe0b2'; dP.fillRect(0, 90, 400, 150);
+    dP.fillStyle = '#ffe0b2'; dP.fillRect(0, 70, 340, 130);
 
     dP.fillStyle = '#0288d1'; dP.beginPath();
-    dP.moveTo(110, 115); dP.lineTo(290, 115); dP.lineTo(370, 215); dP.lineTo(30, 215); dP.closePath(); dP.fill();
+    dP.moveTo(90, 90); dP.lineTo(250, 90); dP.lineTo(310, 180); dP.lineTo(30, 180); dP.closePath(); dP.fill();
 
     dP.fillStyle = '#29b6f6'; dP.beginPath();
-    dP.moveTo(118, 122); dP.lineTo(282, 122); dP.lineTo(358, 207); dP.lineTo(42, 207); dP.closePath(); dP.fill();
+    dP.moveTo(96, 96); dP.lineTo(244, 96); dP.lineTo(300, 174); dP.lineTo(40, 174); dP.closePath(); dP.fill();
 
-    dP.strokeStyle = 'rgba(255,255,255,0.8)'; dP.lineWidth = 3;
-    dP.beginPath(); dP.moveTo(160, 122); dP.lineTo(130, 207); dP.stroke();
-    dP.beginPath(); dP.moveTo(200, 122); dP.lineTo(200, 207); dP.stroke();
-    dP.beginPath(); dP.moveTo(240, 122); dP.lineTo(270, 207); dP.stroke();
+    dP.strokeStyle = 'rgba(255,255,255,0.8)'; dP.lineWidth = 2;
+    dP.beginPath(); dP.moveTo(130, 96); dP.lineTo(110, 174); dP.stroke();
+    dP.beginPath(); dP.moveTo(170, 96); dP.lineTo(170, 174); dP.stroke();
+    dP.beginPath(); dP.moveTo(210, 96); dP.lineTo(230, 174); dP.stroke();
 
-    dP.fillStyle = '#ec407a'; dP.beginPath(); dP.arc(350, 95, 25, Math.PI, 0); dP.fill();
-    dP.strokeStyle = '#5d4037'; dP.lineWidth = 2; dP.beginPath(); dP.moveTo(350, 95); dP.lineTo(350, 130); dP.stroke();
-    dP.fillStyle = '#ffffff'; dP.fillRect(315, 115, 30, 8);
-    dP.fillStyle = '#29b6f6'; dP.fillRect(328, 113, 10, 10);
-
-    dP.fillStyle = '#0288d1'; dP.beginPath();
-    dP.moveTo(100, 130); dP.lineTo(200, 100); dP.lineTo(210, 108); dP.lineTo(110, 138); dP.closePath(); dP.fill();
-
-    dP.fillStyle = '#cfd8dc'; dP.fillRect(65, 80, 30, 60);
-    dP.strokeStyle = '#78909c'; dP.lineWidth = 3;
-    dP.beginPath(); dP.moveTo(45, 80); dP.lineTo(45, 160); dP.stroke();
-    for(let r = 85; r <= 155; r += 12) {
-        dP.beginPath(); dP.moveTo(45, r); dP.lineTo(65, r); dP.stroke();
-    }
-    dP.fillStyle = '#0288d1'; dP.fillRect(60, 70, 160, 12);
-    dP.fillStyle = '#e0e0e0'; dP.fillRect(60, 70, 60, 12);
+    dP.fillStyle = '#ec407a'; dP.beginPath(); dP.arc(290, 75, 20, Math.PI, 0); dP.fill();
+    dP.strokeStyle = '#5d4037'; dP.lineWidth = 2; dP.beginPath(); dP.moveTo(290, 75); dP.lineTo(290, 105); dP.stroke();
 
     s.piscina_img = cPiscina;
 
@@ -333,13 +383,14 @@ window.addEventListener('keyup', e => keys[e.key] = false);
 function abrirModalCasaRosilene() {
     if (!modalAberto && cenaAtual === 'mapa') {
         modalAberto = true;
-        document.getElementById('interactive-modal').style.display = 'block';
+        document.getElementById('modal-container-wrapper').style.display = 'flex';
+        desenharBalãoNoCanvasDoModal();
     }
 }
 
 function fecharModal() {
     modalAberto = false;
-    document.getElementById('interactive-modal').style.display = 'none';
+    document.getElementById('modal-container-wrapper').style.display = 'none';
 }
 
 function escolherOpcao(opcao) {
@@ -353,40 +404,41 @@ function voltarAoMapa() {
     player.y = 150;
 }
 
-function desenharBalaoComPiscina(x, y, largura, altura) {
-    ctx.save();
-    const p = 8;
+function desenharBalãoNoCanvasDoModal() {
+    const bCtx = balloonCtx;
+    bCtx.clearRect(0, 0, balloonCanvas.width, balloonCanvas.height);
 
-    ctx.beginPath();
-    ctx.rect(x + p*2, y + p, largura - p*4, altura - p*2);
-    ctx.rect(x + p, y + p*2, largura - p*2, altura - p*4);
-    ctx.clip();
+    const x = 30, y = 10, largura = 310, altura = 180;
+    const p = 6;
 
-    ctx.drawImage(SPRITES.piscina_img, x, y, largura, altura - p*2);
-    ctx.restore();
+    // Conteúdo da Piscina Recortado dentro do balão
+    bCtx.save();
+    bCtx.beginPath();
+    bCtx.rect(x + p*2, y + p, largura - p*4, altura - p*2);
+    bCtx.rect(x + p, y + p*2, largura - p*2, altura - p*4);
+    bCtx.clip();
+    bCtx.drawImage(SPRITES.piscina_img, x, y, largura, altura - p*2);
+    bCtx.restore();
 
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(x + p*2, y, largura - p*4, p);
-    ctx.fillRect(x + p*2, y + altura - p*3, largura - p*4, p);
-    ctx.fillRect(x, y + p*2, p, altura - p*5);
-    ctx.fillRect(x + largura - p, y + p*2, p, altura - p*5);
+    // Borda Pixel Art do Balão
+    bCtx.fillStyle = '#000000';
+    bCtx.fillRect(x + p*2, y, largura - p*4, p);
+    bCtx.fillRect(x + p*2, y + altura - p*3, largura - p*4, p);
+    bCtx.fillRect(x, y + p*2, p, altura - p*5);
+    bCtx.fillRect(x + largura - p, y + p*2, p, altura - p*5);
 
-    ctx.fillRect(x + p, y + p, p, p);
-    ctx.fillRect(x + largura - p*2, y + p, p, p);
-    ctx.fillRect(x + p, y + altura - p*4, p, p);
-    ctx.fillRect(x + largura - p*2, y + altura - p*4, p, p);
+    bCtx.fillRect(x + p, y + p, p, p);
+    bCtx.fillRect(x + largura - p*2, y + p, p, p);
+    bCtx.fillRect(x + p, y + altura - p*4, p, p);
+    bCtx.fillRect(x + largura - p*2, y + altura - p*4, p, p);
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-    ctx.fillRect(x + largura - p*3, y + p, p*2, altura - p*3);
+    // Ponta do Balão apontando para a esquerda (direção do menu)
+    bCtx.fillStyle = '#000000';
+    bCtx.fillRect(x - p, y + altura / 2, p*2, p*3);
+    bCtx.fillRect(x - p*2, y + altura / 2 + p, p, p);
 
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(x + p*6, y + altura - p*3, p*3, p);
-    ctx.fillRect(x + p*7, y + altura - p*2, p*2, p);
-    ctx.fillRect(x + p*8, y + altura - p, p, p);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(x + p*6, y + altura - p*3, p*2, p);
-    ctx.fillRect(x + p*7, y + altura - p*2, p, p);
+    bCtx.fillStyle = '#ffffff';
+    bCtx.fillRect(x, y + altura / 2 + p, p, p);
 }
 
 function update() {
@@ -426,20 +478,23 @@ function draw() {
     if (cenaAtual === 'mapa') {
         ctx.fillStyle = '#27ae60'; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Estrada Central
         for (let y = 0; y < canvas.height; y += 64) {
             for (let x = 416; x < 544; x += 64) {
                 ctx.drawImage(SPRITES.estrada, x, y);
             }
         }
 
+        // Calçada
         for (let y = 0; y < canvas.height; y += 64) {
             ctx.drawImage(SPRITES.calcada, 352, y);
             ctx.drawImage(SPRITES.calcada, 544, y);
         }
 
+        // ÁRVORES RESTAURADAS NAS LATERAIS
         const posX = [20, 90, 800, 870];
         for (let x of posX) {
-            for (let y = 10; y < canvas.height; y += 110) {
+            for (let y = 10; y < canvas.height; y += 120) {
                 ctx.drawImage(SPRITES.arvore, x, y);
             }
         }
@@ -460,14 +515,15 @@ function draw() {
         }
         ctx.drawImage(SPRITES.casa_rosilene, 610, 20);
 
-        desenharBalaoComPiscina(280, 90, 400, 240);
+        // Imagem grande da Piscina na Tela
+        ctx.drawImage(SPRITES.piscina_img, 280, 90, 400, 240);
 
         SPRITES.drawMiguel(ctx, player.x, player.y, walkFrame);
         SPRITES.drawBatman(ctx, player.x + 32, player.y - 2, walkFrame);
 
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(10, 10, 340, 36);
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px sans-serif';
-        ctx.fillText('🏊‍♂️ Piscina no Balão! (Pressione ESC para voltar)', 20, 33);
+        ctx.fillText('🏊‍♂️ Na Piscina! (Pressione ESC para voltar ao mapa)', 20, 33);
 
     } else if (cenaAtual === 'vovo') {
         ctx.fillStyle = '#5d4037'; ctx.fillRect(0, 0, canvas.width, canvas.height);
