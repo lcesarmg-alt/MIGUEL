@@ -7,7 +7,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background-color: #121212;
+            background-color: #0b0f19;
             color: #ffffff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
@@ -17,39 +17,41 @@
             min-height: 100vh;
             overflow: hidden;
         }
-        h1 { margin-bottom: 10px; font-size: 24px; color: #ffd700; text-shadow: 2px 2px #000; }
+        h1 { margin-bottom: 8px; font-size: 26px; color: #ffd700; text-shadow: 2px 2px 4px #000; }
         #canvas-container {
             position: relative;
-            border: 4px solid #333;
+            border: 4px solid #222;
             border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            background-color: #2e7d32;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.9);
+            background-color: #1e4620;
         }
-        canvas { display: block; }
+        canvas { display: block; image-rendering: pixelated; }
         #ui {
-            margin-top: 15px;
+            margin-top: 12px;
             display: flex;
-            gap: 15px;
+            gap: 20px;
             font-size: 16px;
-            background: rgba(0,0,0,0.6);
-            padding: 8px 16px;
+            font-weight: bold;
+            background: rgba(0,0,0,0.75);
+            padding: 8px 20px;
             border-radius: 20px;
+            border: 1px solid #444;
         }
-        .controls-hint { margin-top: 8px; color: #aaa; font-size: 13px; }
+        .hint { margin-top: 6px; color: #888; font-size: 13px; }
     </style>
 </head>
 <body>
 
-    <h1>🎮 As Aventuras de Miguel e Batman</h1>
+    <h1>⚔️ As Aventuras de Miguel e Batman</h1>
     <div id="canvas-container">
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <canvas id="gameCanvas" width="960" height="640"></canvas>
     </div>
     <div id="ui">
-        <div>⭐ Pontuação: <span id="score">0</span></div>
-        <div>❤️ Vidas: <span id="lives">3</span></div>
-        <div>🏆 Nível: <span id="level">1</span></div>
+        <div>⭐ Pontos: <span id="score" style="color: #ffd700;">0</span></div>
+        <div>❤️ Vidas: <span id="lives" style="color: #ff4d4d;">3</span></div>
+        <div>🏆 Nível: <span id="level" style="color: #00e5ff;">1</span></div>
     </div>
-    <div class="controls-hint">Use as **Setas do Teclado** ou **WASD** para movimentar o Miguel e o Batman!</div>
+    <div class="hint">Use as **Setas do Teclado** ou **WASD** para mover o Miguel e o Batman!</div>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
@@ -57,109 +59,146 @@ const ctx = canvas.getContext('2d');
 
 let score = 0;
 let lives = 3;
-let level = 1;
 
-// Gerador de Texturas/Imagens dinâmicas via Canvas offline
-function criarSprites() {
-    const sprites = {};
+// --- GERADOR DE TEXTURAS EM PIXEL ART 16-BIT HD ---
+function gerarSpritesHD() {
+    const s = {};
 
-    // 1. Árvore
-    const cArv = document.createElement('canvas'); cArv.width = 64; cArv.height = 64;
-    const dArv = cArv.getContext('2d');
-    dArv.fillStyle = '#3a200d'; dArv.fillRect(26, 42, 12, 22);
-    dArv.fillStyle = '#1b4d20'; dArv.beginPath(); dArv.arc(32, 36, 26, 0, Math.PI*2); dArv.fill();
-    dArv.fillStyle = '#2e7d32'; dArv.beginPath(); dArv.arc(32, 24, 22, 0, Math.PI*2); dArv.fill();
-    dArv.fillStyle = '#4caf50'; dArv.beginPath(); dArv.arc(32, 12, 16, 0, Math.PI*2); dArv.fill();
-    sprites.arvore = cArv;
+    // 1. Pedra de Paralelepípedo HD
+    const cRoad = document.createElement('canvas'); cRoad.width = 64; cRoad.height = 64;
+    const dR = cRoad.getContext('2d');
+    dR.fillStyle = '#787884'; dR.fillRect(0,0,64,64);
+    for(let y=0; y<64; y+=8) {
+        let offset = (y % 16 === 0) ? 0 : 8;
+        for(let x=0; x<64; x+=16) {
+            let px = x + offset;
+            dR.fillStyle = '#9aa0a8'; dR.fillRect(px+1, y+1, 14, 6);
+            dR.fillStyle = '#565660'; dR.fillRect(px, y, 16, 1); dR.fillRect(px, y, 1, 8);
+            dR.fillStyle = '#b0b8c2'; dR.fillRect(px+2, y+2, 12, 1);
+        }
+    }
+    s.estrada = cRoad;
 
-    // 2. Estrada
-    const cEst = document.createElement('canvas'); cEst.width = 48; cEst.height = 48;
-    const dEst = cEst.getContext('2d');
-    dEst.fillStyle = '#616161'; dEst.fillRect(0, 0, 48, 48);
-    dEst.strokeStyle = '#424242'; dEst.lineWidth = 2;
-    for(let i=0; i<48; i+=12){ dEst.strokeRect(0, i, 48, 12); }
-    sprites.estrada = cEst;
+    // 2. Árvore Densa 16-Bit HD
+    const cTree = document.createElement('canvas'); cTree.width = 96; cTree.height = 110;
+    const dT = cTree.getContext('2d');
+    // Sombra da árvore
+    dT.fillStyle = 'rgba(0,0,0,0.35)'; dT.beginPath(); dT.ellipse(48, 98, 38, 12, 0, 0, Math.PI*2); dT.fill();
+    // Tronco
+    dT.fillStyle = '#3a200d'; dT.fillRect(38, 70, 20, 30);
+    dT.fillStyle = '#261305'; dT.fillRect(38, 70, 4, 30); dT.fillRect(54, 70, 4, 30);
+    // Camadas de folhas com contorno e brilho
+    function copas(cx, cy, r, cEscura, cMedia, cClara) {
+        dT.fillStyle = '#081c09'; dT.beginPath(); dT.arc(cx, cy, r+2, 0, Math.PI*2); dT.fill();
+        dT.fillStyle = cEscura; dT.beginPath(); dT.arc(cx, cy, r, 0, Math.PI*2); dT.fill();
+        dT.fillStyle = cMedia; dT.beginPath(); dT.arc(cx-2, cy-3, r*0.75, 0, Math.PI*2); dT.fill();
+        dT.fillStyle = cClara; dT.beginPath(); dT.arc(cx-4, cy-5, r*0.4, 0, Math.PI*2); dT.fill();
+    }
+    copas(48, 75, 26, '#0f4012', '#1b6e20', '#2eb834');
+    copas(26, 55, 24, '#0f4012', '#1b6e20', '#2eb834');
+    copas(70, 55, 24, '#0f4012', '#1b6e20', '#2eb834');
+    copas(36, 32, 22, '#155418', '#248f2a', '#42d44b');
+    copas(60, 32, 22, '#155418', '#248f2a', '#42d44b');
+    copas(48, 18, 18, '#1b6e20', '#2ebd34', '#76ff03');
+    s.arvore = cTree;
 
-    // 3. Batman
-    const cBat = document.createElement('canvas'); cBat.width = 48; cBat.height = 48;
+    // 3. Arbusto Pequeno
+    const cBush = document.createElement('canvas'); cBush.width = 36; cBush.height = 36;
+    const dB = cBush.getContext('2d');
+    dB.fillStyle = '#0a2e0c'; dB.beginPath(); dB.arc(18, 18, 16, 0, Math.PI*2); dB.fill();
+    dB.fillStyle = '#1b6e20'; dB.beginPath(); dB.arc(18, 18, 14, 0, Math.PI*2); dB.fill();
+    dB.fillStyle = '#42d44b'; dB.beginPath(); dB.arc(14, 14, 8, 0, Math.PI*2); dB.fill();
+    s.arbusto = cBush;
+
+    // 4. Batman HD com Sabre de Luz Azul
+    const cBat = document.createElement('canvas'); cBat.width = 64; cBat.height = 64;
     const dBat = cBat.getContext('2d');
-    dBat.fillStyle = '#111'; dBat.fillRect(10, 16, 28, 28); // Capa
-    dBat.fillStyle = '#212121'; dBat.fillRect(14, 12, 20, 26); // Corpo
-    dBat.fillStyle = '#FFD54F'; dBat.fillRect(14, 26, 20, 5); // Cinto
-    dBat.fillStyle = '#000'; // Máscara/Orelhas
-    dBat.beginPath(); dBat.moveTo(14,12); dBat.lineTo(18,2); dBat.lineTo(22,12); dBat.fill();
-    dBat.beginPath(); dBat.moveTo(26,12); dBat.lineTo(30,2); dBat.lineTo(34,12); dBat.fill();
-    dBat.fillStyle = '#FFF'; dBat.fillRect(18, 14, 4, 3); dBat.fillRect(26, 14, 4, 3); // Olhos
-    dBat.fillStyle = '#00E5FF'; dBat.fillRect(36, 10, 4, 24); // Sabro/Espada de luz
-    sprites.batman = cBat;
+    dBat.fillStyle = 'rgba(0,0,0,0.4)'; dBat.beginPath(); dBat.ellipse(32, 58, 20, 6, 0, 0, Math.PI*2); dBat.fill();
+    // Capa e Traje
+    dBat.fillStyle = '#0d0d11'; dBat.fillRect(12, 22, 40, 32);
+    dBat.fillStyle = '#23242c'; dBat.fillRect(20, 18, 24, 34);
+    dBat.fillStyle = '#fbc02d'; dBat.fillRect(20, 36, 24, 6); // Cinto
+    // Cabeça e Orelhas
+    dBat.fillStyle = '#0d0d11';
+    dBat.fillRect(20, 6, 24, 18);
+    dBat.beginPath(); dBat.moveTo(20,6); dBat.lineTo(24,0); dBat.lineTo(28,6); dBat.fill();
+    dBat.beginPath(); dBat.moveTo(36,6); dBat.lineTo(40,0); dBat.lineTo(44,6); dBat.fill();
+    // Olhos brilhantes
+    dBat.fillStyle = '#ffffff'; dBat.fillRect(24, 10, 5, 3); dBat.fillRect(35, 10, 5, 3);
+    // Sabre Azul
+    dBat.fillStyle = '#00e5ff'; dBat.shadowColor = '#00e5ff'; dBat.shadowBlur = 12;
+    dBat.fillRect(44, 12, 5, 36); dBat.shadowBlur = 0;
+    s.batman = cBat;
 
-    // 4. Miguel (Cadeira de Rodas)
-    const cMig = document.createElement('canvas'); cMig.width = 48; cMig.height = 48;
+    // 5. Coringa HD com Sabre Vermelho
+    const cJok = document.createElement('canvas'); cJok.width = 64; cJok.height = 64;
+    const dJok = cJok.getContext('2d');
+    dJok.fillStyle = 'rgba(0,0,0,0.4)'; dJok.beginPath(); dJok.ellipse(32, 58, 20, 6, 0, 0, Math.PI*2); dJok.fill();
+    // Terno Roxo
+    dJok.fillStyle = '#4a148c'; dJok.fillRect(20, 20, 24, 34);
+    dJok.fillStyle = '#ffb300'; dJok.fillRect(28, 22, 8, 14); // Colete
+    // Rosto e Cabelo Verde
+    dJok.fillStyle = '#1b5e20'; dJok.fillRect(18, 4, 28, 10); // Cabelo
+    dJok.fillStyle = '#ffffff'; dJok.fillRect(22, 10, 20, 14); // Rosto
+    dJok.fillStyle = '#d50000'; dJok.fillRect(24, 18, 16, 4);  // Sorriso
+    dJok.fillStyle = '#000000'; dJok.fillRect(25, 12, 3, 3); dJok.fillRect(36, 12, 3, 3); // Olhos
+    // Sabre Vermelho
+    dJok.fillStyle = '#ff1744'; dJok.shadowColor = '#ff1744'; dJok.shadowBlur = 12;
+    dJok.fillRect(14, 12, 5, 36); dJok.shadowBlur = 0;
+    s.coringa = cJok;
+
+    // 6. Miguel HD na Cadeira de Rodas
+    const cMig = document.createElement('canvas'); cMig.width = 64; cMig.height = 64;
     const dMig = cMig.getContext('2d');
-    dMig.strokeStyle = '#1565C0'; dMig.lineWidth = 4;
-    dMig.beginPath(); dMig.arc(16, 32, 12, 0, Math.PI*2); dMig.stroke(); // Roda esq
-    dMig.beginPath(); dMig.arc(32, 32, 12, 0, Math.PI*2); dMig.stroke(); // Roda dir
-    dMig.fillStyle = '#424242'; dMig.fillRect(16, 20, 16, 14); // Assento
-    dMig.fillStyle = '#FFCC80'; dMig.fillRect(18, 8, 12, 12); // Rosto
-    dMig.fillStyle = '#1E88E5'; dMig.fillRect(16, 18, 16, 10); // Camisa
-    sprites.miguel = cMig;
+    dMig.fillStyle = 'rgba(0,0,0,0.4)'; dMig.beginPath(); dMig.ellipse(32, 58, 22, 6, 0, 0, Math.PI*2); dMig.fill();
+    // Rodas da Cadeira
+    dMig.strokeStyle = '#0288d1'; dMig.lineWidth = 5;
+    dMig.beginPath(); dMig.arc(20, 44, 14, 0, Math.PI*2); dMig.stroke();
+    dMig.beginPath(); dMig.arc(44, 44, 14, 0, Math.PI*2); dMig.stroke();
+    // Assento
+    dMig.fillStyle = '#37474f'; dMig.fillRect(20, 28, 24, 18);
+    // Miguel
+    dMig.fillStyle = '#1976d2'; dMig.fillRect(22, 22, 20, 14); // Camisa
+    dMig.fillStyle = '#ffcc80'; dMig.fillRect(24, 8, 16, 14);  // Rosto
+    dMig.fillStyle = '#5d4037'; dMig.fillRect(22, 6, 20, 6);   // Cabelo
+    dMig.fillStyle = '#000000'; dMig.fillRect(27, 12, 3, 3); dMig.fillRect(34, 12, 3, 3); // Olhos
+    s.miguel = cMig;
 
-    // 5. Coringa
-    const cCor = document.createElement('canvas'); cCor.width = 48; cCor.height = 48;
-    const dCor = cCor.getContext('2d');
-    dCor.fillStyle = '#6A1B9A'; dCor.fillRect(14, 14, 20, 26); // Terno
-    dCor.fillStyle = '#2E7D32'; dCor.fillRect(16, 4, 16, 8);   // Cabelo
-    dCor.fillStyle = '#FFFFFF'; dCor.fillRect(16, 10, 16, 10); // Rosto
-    dCor.fillStyle = '#FF1744'; dCor.fillRect(36, 10, 4, 24);  // Espada Vermelha
-    sprites.coringa = cCor;
-
-    // Função interna para criar Prédios/Casas
-    function criarConstrucao(corParede, rotulo) {
-        const cB = document.createElement('canvas'); cB.width = 140; cB.height = 110;
-        const dB = cB.getContext('2d');
-        dB.fillStyle = corParede; dB.fillRect(10, 30, 120, 70);
-        dB.strokeStyle = '#212121'; dB.lineWidth = 3; dB.strokeRect(10, 30, 120, 70);
+    // 7. Construções (Casas, Escola, Igreja)
+    function criarPredio(corParede, rotulo, icone) {
+        const cP = document.createElement('canvas'); cP.width = 160; cP.height = 120;
+        const dP = cP.getContext('2d');
+        // Parede com tijolos e sombra
+        dP.fillStyle = corParede; dP.fillRect(10, 35, 140, 80);
+        dP.strokeStyle = '#1a1a1a'; dP.lineWidth = 4; dP.strokeRect(10, 35, 140, 80);
         // Telhado
-        dB.fillStyle = '#D32F2F';
-        dB.beginPath(); dB.moveTo(0,30); dB.lineTo(70,5); dB.lineTo(140,30); dB.closePath(); dB.fill(); dB.stroke();
-        // Porta
-        dB.fillStyle = '#5D4037'; dB.fillRect(55, 65, 30, 35);
-        // Janelas
-        dB.fillStyle = '#FFF8E1'; dB.fillRect(25, 45, 20, 20); dB.fillRect(95, 45, 20, 20);
+        dP.fillStyle = '#b71c1c';
+        dP.beginPath(); dP.moveTo(0,35); dP.lineTo(80,5); dP.lineTo(160,35); dP.closePath(); dP.fill(); dP.stroke();
+        // Porta e Janelas
+        dP.fillStyle = '#4e342e'; dP.fillRect(65, 75, 30, 40); dP.strokeRect(65, 75, 30, 40);
+        dP.fillStyle = '#fff8e1'; dP.fillRect(25, 50, 26, 26); dP.fillRect(109, 50, 26, 26);
+        dP.strokeRect(25, 50, 26, 26); dP.strokeRect(109, 50, 26, 26);
         // Placa
-        dB.fillStyle = '#FFF'; dB.fillRect(20, 100, 100, 10);
-        dB.fillStyle = '#000'; dB.font = 'bold 9px sans-serif'; dB.textAlign = 'center';
-        dB.fillText(rotulo, 70, 108);
-        return cB;
+        dP.fillStyle = '#ffffff'; dP.fillRect(20, 10, 120, 18); dP.strokeRect(20, 10, 120, 18);
+        dP.fillStyle = '#000000'; dP.font = 'bold 11px sans-serif'; dP.textAlign = 'center';
+        dP.fillText(rotulo, 80, 23);
+        return cP;
     }
 
-    sprites.casa_mariangela = criarConstrucao('#FB8C00', 'Casa Mariangela');
-    sprites.casa_rosilene = criarConstrucao('#0288D1', 'Casa Rosilene');
-    sprites.escola = criarConstrucao('#43A047', 'Escola');
-    sprites.igreja = criarConstrucao('#8E24AA', 'Igreja');
+    s.casa_mariangela = criarPredio('#ef6c00', 'Casa Mariangela');
+    s.casa_rosilene = criarPredio('#0277bd', 'Casa Rosilene');
+    s.escola = criarPredio('#2e7d32', 'Escola');
+    s.igreja = criarPredio('#6a1b9a', 'Igreja');
 
-    return sprites;
+    return s;
 }
 
-const SPRITES = criarSprites();
+const SPRITES = gerarSpritesHD();
 
-// Posição do jogador
-const player = {
-    x: 376,
-    y: 276,
-    speed: 4,
-    size: 48
-};
+// Estado do jogador (Miguel + Batman)
+const player = { x: 448, y: 280, speed: 4 };
+const enemy = { x: 100, y: 100, speed: 1.6 };
 
-// Posição do Vilão (Coringa)
-const enemy = {
-    x: 100,
-    y: 100,
-    speed: 1.5,
-    size: 48
-};
-
-// Mapeamento do Teclado
 const keys = {};
 window.addEventListener('keydown', e => keys[e.key] = true);
 window.addEventListener('keyup', e => keys[e.key] = false);
@@ -170,9 +209,8 @@ function update() {
     if (keys['ArrowLeft'] || keys['a'] || keys['A']) player.x -= player.speed;
     if (keys['ArrowRight'] || keys['d'] || keys['D']) player.x += player.speed;
 
-    // Limites da tela
-    player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
-    player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
+    player.x = Math.max(160, Math.min(canvas.width - 220, player.x));
+    player.y = Math.max(20, Math.min(canvas.height - 80, player.y));
 
     // Perseguição do Coringa
     if (enemy.x < player.x) enemy.x += enemy.speed;
@@ -180,53 +218,56 @@ function update() {
     if (enemy.y < player.y) enemy.y += enemy.speed;
     if (enemy.y > player.y) enemy.y -= enemy.speed;
 
-    // Colisão do Coringa com o Miguel/Batman
-    const dist = Math.hypot((player.x + 24) - (enemy.x + 24), (player.y + 24) - (enemy.y + 24));
-    if (dist < 32) {
+    // Colisão
+    const dist = Math.hypot((player.x + 32) - (enemy.x + 32), (player.y + 32) - (enemy.y + 32));
+    if (dist < 40) {
         lives--;
         document.getElementById('lives').textContent = lives;
-        player.x = 376; player.y = 276;
-        enemy.x = 50; enemy.y = 50;
+        player.x = 448; player.y = 280;
+        enemy.x = 180; enemy.y = 80;
         if (lives <= 0) {
-            alert("Fim de Jogo! O Miguel e o Batman vão tentar novamente!");
-            score = 0; lives = 3;
-            document.getElementById('score').textContent = score;
+            alert("O Coringa foi derrotado! Vamos tentar novamente!");
+            lives = 3; score = 0;
             document.getElementById('lives').textContent = lives;
+            document.getElementById('score').textContent = score;
         }
     }
 }
 
 function draw() {
-    // 1. Gramado (Fundo)
-    ctx.fillStyle = '#2e7d32';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // 1. Gramado Vibrante
+    ctx.fillStyle = '#27ae60'; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 2. Estradas
-    for(let x = 0; x < canvas.width; x += 48) {
-        ctx.drawImage(SPRITES.estrada, x, 276);
-    }
-    for(let y = 0; y < canvas.height; y += 48) {
-        ctx.drawImage(SPRITES.estrada, 376, y);
+    // 2. Estrada Central de Pedra HD
+    for (let y = 0; y < canvas.height; y += 64) {
+        for (let x = 384; x < 576; x += 64) {
+            ctx.drawImage(SPRITES.estrada, x, y);
+        }
     }
 
-    // 3. Edifícios
-    ctx.drawImage(SPRITES.casa_mariangela, 40, 40);
-    ctx.drawImage(SPRITES.casa_rosilene, 620, 40);
-    ctx.drawImage(SPRITES.escola, 40, 440);
-    ctx.drawImage(SPRITES.igreja, 620, 440);
+    // 3. Fileira de Árvores Densas nas Laterais (Efeito de Floresta HD igual à foto)
+    for (let y = -20; y < canvas.height + 40; y += 70) {
+        ctx.drawImage(SPRITES.arvore, 10, y);
+        ctx.drawImage(SPRITES.arvore, 70, y);
+        ctx.drawImage(SPRITES.arvore, 790, y);
+        ctx.drawImage(SPRITES.arvore, 850, y);
+    }
 
-    // 4. Árvores decorativas
-    ctx.drawImage(SPRITES.arvore, 240, 80);
-    ctx.drawImage(SPRITES.arvore, 500, 80);
-    ctx.drawImage(SPRITES.arvore, 240, 460);
-    ctx.drawImage(SPRITES.arvore, 500, 460);
+    // 4. Arbustos e Detalhes
+    ctx.drawImage(SPRITES.arbusto, 200, 120);
+    ctx.drawImage(SPRITES.arbusto, 220, 140);
+    ctx.drawImage(SPRITES.arbusto, 720, 220);
 
-    // 5. Coringa (Inimigo)
+    // 5. Construções com Placas nas Margens
+    ctx.drawImage(SPRITES.casa_mariangela, 180, 20);
+    ctx.drawImage(SPRITES.casa_rosilene, 610, 20);
+    ctx.drawImage(SPRITES.escola, 180, 480);
+    ctx.drawImage(SPRITES.igreja, 610, 480);
+
+    // 6. Personagens em Batalha
     ctx.drawImage(SPRITES.coringa, enemy.x, enemy.y);
-
-    // 6. Miguel e Batman (Lado a Lado)
     ctx.drawImage(SPRITES.miguel, player.x, player.y);
-    ctx.drawImage(SPRITES.batman, player.x + 28, player.y - 10);
+    ctx.drawImage(SPRITES.batman, player.x + 36, player.y - 12);
 }
 
 function loop() {
