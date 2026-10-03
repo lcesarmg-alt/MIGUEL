@@ -201,25 +201,70 @@ function gerarSprites() {
     }
     s.calcada = cSidewalk;
 
-    // 3. Batman com Passos
-    s.drawBatman = function(ctx, x, y, frame) {
-        const offsetLeft = (frame === 1) ? -3 : 0;
-        const offsetRight = (frame === 2) ? 3 : 0;
+    // 3. BATMAN REFIEL À IMAGEM FORNECIDA
+    const pixelMapBatman = [
+        ".................BB....BB................",
+        "................BBBB..BBBB...............",
+        "...............BB11BBBB11BB..............",
+        "..............BB1111BB1111BB.............",
+        "..............BB1111111111BB.............",
+        "..............BB1111111111BB.............",
+        ".............BB111WW11WW111BB............",
+        ".............BB111WW11WW111BB............",
+        ".............BB111111111111BB............",
+        "..............BB111SSSS111BB.............",
+        "...............BB1SSSSSS1BB..............",
+        "..............BBB1SSSSSS1BBB.............",
+        "............BB22BBB1111BBB22BB...........",
+        "...........BB22222BBBBBB22222BB..........",
+        "..........BB222222222222222222BB.........",
+        "..........BB222222222222222222BB.........",
+        ".........BB33222222222222222233BB........",
+        ".........BB33222222222222222233BB........",
+        "........BB3333222222222222223333BB.......",
+        "........BB3333222222222222223333BB.......",
+        "........BB33333YYYYYYYYYYYY33333BB.......",
+        "........BB33333YYYYYYYYYYYY33333BB.......",
+        ".........BB3333BB11111111BB3333BB........",
+        ".........BB3333BB11111111BB3333BB........",
+        "..........BBBBB222222222222BBBBB.........",
+        "...........BB..22222..22222..BB..........",
+        "...........BB..22222..22222..BB..........",
+        "...........BB..22222..22222..BB..........",
+        "...........BB..11111..11111..BB..........",
+        "...........BB..11111..11111..BB..........",
+        "..........BBBB.BBBBB..BBBBB.BBBB........."
+    ];
 
+    s.drawBatman = function(ctx, x, y, frame) {
         ctx.save();
         ctx.translate(x, y);
 
-        ctx.fillStyle = '#1e1e24';
-        ctx.fillRect(8, 38 + offsetLeft, 8, 14);
-        ctx.fillRect(20, 38 + offsetRight, 8, 14);
+        const scale = 1.6;
+        const offsetYLeft = (frame === 1) ? -2 : 0;
+        const offsetYRight = (frame === 2) ? -2 : 0;
 
-        ctx.fillRect(6, 16, 24, 24); 
-        ctx.fillStyle = '#7a7e85'; ctx.fillRect(10, 20, 16, 18);
-        ctx.fillStyle = '#d4a017'; ctx.fillRect(10, 34, 16, 4);
-        ctx.fillStyle = '#1e1e24'; ctx.fillRect(10, 4, 16, 14);
-        ctx.fillRect(8, 0, 4, 8); ctx.fillRect(24, 0, 4, 8);
-        ctx.fillStyle = '#ffcc80'; ctx.fillRect(14, 12, 8, 5);
+        for (let r = 0; r < pixelMapBatman.length; r++) {
+            for (let c = 0; c < pixelMapBatman[r].length; c++) {
+                const char = pixelMapBatman[r][c];
+                if (char === '.') continue;
 
+                let pxY = r * scale;
+                // Anima as pernas ao caminhar
+                if (r >= 25 && c < 20) pxY += offsetYLeft;
+                if (r >= 25 && c >= 20) pxY += offsetYRight;
+
+                if (char === 'B') ctx.fillStyle = '#000000';      // Contorno preto
+                else if (char === '1') ctx.fillStyle = '#262626'; // Preto / Capuz / Botas
+                else if (char === '2') ctx.fillStyle = '#737373'; // Cinza traje
+                else if (char === '3') ctx.fillStyle = '#404040'; // Capa escura
+                else if (char === 'W') ctx.fillStyle = '#ffffff'; // Olho branco
+                else if (char === 'S') ctx.fillStyle = '#e0a98b'; // Pele do rosto
+                else if (char === 'Y') ctx.fillStyle = '#e6ab14'; // Cinto amarelo
+
+                ctx.fillRect(c * scale, pxY, scale, scale);
+            }
+        }
         ctx.restore();
     };
 
@@ -269,14 +314,45 @@ function gerarSprites() {
     s.escola = criarPredio('#2e7d32', 'Escola');
     s.igreja = criarPredio('#6a1b9a', 'Igreja');
 
-    // 6. Imagem da Piscina (Tamanho proporcional ao balão)
-    const cPiscina = document.createElement('canvas'); cPiscina.width = 320; cPiscina.height = 200;
+    // 6. Desenho da Piscina
+    const cPiscina = document.createElement('canvas'); cPiscina.width = 400; cPiscina.height = 240;
     const dP = cPiscina.getContext('2d');
-    dP.fillStyle = '#87ceeb'; dP.fillRect(0, 0, 320, 80);
-    dP.fillStyle = '#2e7d32'; dP.beginPath(); dP.arc(30, 75, 30, 0, Math.PI*2); dP.fill();
-    dP.fillStyle = '#ffe0b2'; dP.fillRect(0, 80, 320, 120);
-    dP.fillStyle = '#29b6f6'; dP.beginPath(); dP.moveTo(30, 110); dP.lineTo(290, 110); dP.lineTo(310, 190); dP.lineTo(10, 190); dP.closePath(); dP.fill();
-    dP.fillStyle = '#0288d1'; dP.fillRect(10, 185, 300, 6);
+
+    dP.fillStyle = '#87ceeb'; dP.fillRect(0, 0, 400, 90);
+    dP.fillStyle = '#4caf50';
+    dP.beginPath(); dP.arc(60, 80, 40, 0, Math.PI*2); dP.arc(100, 75, 50, 0, Math.PI*2); dP.fill();
+    dP.beginPath(); dP.arc(280, 80, 35, 0, Math.PI*2); dP.arc(320, 70, 45, 0, Math.PI*2); dP.arc(360, 85, 35, 0, Math.PI*2); dP.fill();
+
+    dP.fillStyle = '#ffe0b2'; dP.fillRect(0, 90, 400, 150);
+
+    dP.fillStyle = '#0288d1'; dP.beginPath();
+    dP.moveTo(110, 115); dP.lineTo(290, 115); dP.lineTo(370, 215); dP.lineTo(30, 215); dP.closePath(); dP.fill();
+
+    dP.fillStyle = '#29b6f6'; dP.beginPath();
+    dP.moveTo(118, 122); dP.lineTo(282, 122); dP.lineTo(358, 207); dP.lineTo(42, 207); dP.closePath(); dP.fill();
+
+    dP.strokeStyle = 'rgba(255,255,255,0.8)'; dP.lineWidth = 3;
+    dP.beginPath(); dP.moveTo(160, 122); dP.lineTo(130, 207); dP.stroke();
+    dP.beginPath(); dP.moveTo(200, 122); dP.lineTo(200, 207); dP.stroke();
+    dP.beginPath(); dP.moveTo(240, 122); dP.lineTo(270, 207); dP.stroke();
+
+    dP.fillStyle = '#ec407a'; dP.beginPath(); dP.arc(350, 95, 25, Math.PI, 0); dP.fill();
+    dP.strokeStyle = '#5d4037'; dP.lineWidth = 2; dP.beginPath(); dP.moveTo(350, 95); dP.lineTo(350, 130); dP.stroke();
+    dP.fillStyle = '#ffffff'; dP.fillRect(315, 115, 30, 8);
+    dP.fillStyle = '#29b6f6'; dP.fillRect(328, 113, 10, 10);
+
+    dP.fillStyle = '#0288d1'; dP.beginPath();
+    dP.moveTo(100, 130); dP.lineTo(200, 100); dP.lineTo(210, 108); dP.lineTo(110, 138); dP.closePath(); dP.fill();
+
+    dP.fillStyle = '#cfd8dc'; dP.fillRect(65, 80, 30, 60);
+    dP.strokeStyle = '#78909c'; dP.lineWidth = 3;
+    dP.beginPath(); dP.moveTo(45, 80); dP.lineTo(45, 160); dP.stroke();
+    for(let r = 85; r <= 155; r += 12) {
+        dP.beginPath(); dP.moveTo(45, r); dP.lineTo(65, r); dP.stroke();
+    }
+    dP.fillStyle = '#0288d1'; dP.fillRect(60, 70, 160, 12);
+    dP.fillStyle = '#e0e0e0'; dP.fillRect(60, 70, 60, 12);
+
     s.piscina_img = cPiscina;
 
     return s;
@@ -315,45 +391,32 @@ function voltarAoMapa() {
     player.y = 150;
 }
 
-// Desenha o Balão com recorte interno preciso
 function desenharBalaoComPiscina(x, y, largura, altura) {
     ctx.save();
+    const p = 8;
 
-    const p = 8; // escala dos pixels das bordas
-
-    // 1. Cria a área interna recortada (Máscara de Recorte)
     ctx.beginPath();
     ctx.rect(x + p*2, y + p, largura - p*4, altura - p*2);
     ctx.rect(x + p, y + p*2, largura - p*2, altura - p*4);
     ctx.clip();
 
-    // 2. Desenha a Imagem da Piscina dentro do limite do balão
     ctx.drawImage(SPRITES.piscina_img, x, y, largura, altura - p*2);
-
     ctx.restore();
 
-    // 3. Desenha os Contornos Pixel Art e a Ponta do Balão por CIMA
     ctx.fillStyle = '#000000';
-
-    // Bordas superiores e inferiores
     ctx.fillRect(x + p*2, y, largura - p*4, p);
     ctx.fillRect(x + p*2, y + altura - p*3, largura - p*4, p);
-
-    // Bordas laterais
     ctx.fillRect(x, y + p*2, p, altura - p*5);
     ctx.fillRect(x + largura - p, y + p*2, p, altura - p*5);
 
-    // Cantos
     ctx.fillRect(x + p, y + p, p, p);
     ctx.fillRect(x + largura - p*2, y + p, p, p);
     ctx.fillRect(x + p, y + altura - p*4, p, p);
     ctx.fillRect(x + largura - p*2, y + altura - p*4, p, p);
 
-    // Sombra interna lateral (estilo pixel art)
     ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
     ctx.fillRect(x + largura - p*3, y + p, p*2, altura - p*3);
 
-    // Ponta do Balão de Fala
     ctx.fillStyle = '#000000';
     ctx.fillRect(x + p*6, y + altura - p*3, p*3, p);
     ctx.fillRect(x + p*7, y + altura - p*2, p*2, p);
@@ -425,7 +488,7 @@ function draw() {
         ctx.drawImage(SPRITES.igreja, 610, 480);
 
         SPRITES.drawMiguel(ctx, player.x, player.y, walkFrame);
-        SPRITES.drawBatman(ctx, player.x + 35, player.y + 2, walkFrame);
+        SPRITES.drawBatman(ctx, player.x + 35, player.y - 4, walkFrame);
 
     } else if (cenaAtual === 'piscina') {
         ctx.fillStyle = '#27ae60'; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -435,11 +498,10 @@ function draw() {
         }
         ctx.drawImage(SPRITES.casa_rosilene, 610, 20);
 
-        // Desenha o balão em um tamanho ideal (360x220) recortando a piscina perfeitamente
-        desenharBalaoComPiscina(300, 100, 360, 220);
+        desenharBalaoComPiscina(280, 90, 400, 240);
 
         SPRITES.drawMiguel(ctx, player.x, player.y, walkFrame);
-        SPRITES.drawBatman(ctx, player.x + 35, player.y + 2, walkFrame);
+        SPRITES.drawBatman(ctx, player.x + 35, player.y - 4, walkFrame);
 
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(10, 10, 340, 36);
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px sans-serif';
@@ -454,7 +516,7 @@ function draw() {
         ctx.fillText('👴 Brincando com o Vovô! (Pressione ESC para voltar)', 20, 33);
 
         SPRITES.drawMiguel(ctx, player.x, player.y, walkFrame);
-        SPRITES.drawBatman(ctx, player.x + 35, player.y + 2, walkFrame);
+        SPRITES.drawBatman(ctx, player.x + 35, player.y - 4, walkFrame);
     }
 }
 
