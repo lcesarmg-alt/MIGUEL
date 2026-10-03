@@ -113,80 +113,36 @@ let walkFrame = 0;
 let walkTimer = 0;
 let isWalking = false;
 
-// --- GERADOR DE SPRITES EM PIXEL ART ---
 function gerarSprites() {
     const s = {};
 
-    // 1. Árvore
+    // 1. Árvore Redesenhada (sem silhueta estranha)
     const cTree = document.createElement('canvas'); 
-    cTree.width = 64; cTree.height = 96;
+    cTree.width = 64; cTree.height = 80;
     const dT = cTree.getContext('2d');
-    const pixelMapTree = [
-        ".................BBBB...........",
-        "...............BBGGGBB..........",
-        "..............BGGGGGGGB.........",
-        "............BBGGGGGGGGGBB.......",
-        "...........BGGGGGGGGGGGGGB......",
-        "..........BGGGGGGGGGGGGGGGB.....",
-        ".........BGGGGGGGGGGGGGGGGGB....",
-        "........BGGGGBBBGGGGGGGGGGGB....",
-        "........BGGGBBBBGGGGGBBBGGGB....",
-        ".......BGGGGBBBBBGGGBBBBGGGGB...",
-        "......BGGGGGBBBBBBGGBBBBBGGGB...",
-        "......BGGGGGGBBBBBBBBBBBGGGGB...",
-        ".....BGGGGGGGBBBBBBBBBBBGGGGGB..",
-        ".....BGGGGGGGGBBBBBBBBBBGGGGGB..",
-        "....BGGGGGGGGGBBBBBBBBBBGGGGGB..",
-        "....BGGGGGGGGGBBBBBBBBBBGGGGGB..",
-        "....BGGGGGGGGGBBBBBBBBBBGGGGGB..",
-        "....BGGGGGGGBBBBBBBBBBBBGGGGGB..",
-        "....BGGGGGGGBBBBBBBBBBBBGGGGGB..",
-        ".....BGGGGGGBBBBBBBBBBBBGGGGGB..",
-        ".....BGGGGGGGBBBBBBBBBBGGGGGB...",
-        "......BGGGGGGGBBBBBBBBGGGGGB....",
-        "......BGGGGGGGGBBBBBGGGGGGGB....",
-        ".......BGGGGGGGGGGGGGGGGGGGB....",
-        "........BGGGGGGGGGGGGGGGGGB.....",
-        ".........BBGGGGGGGGGGGGGBB......",
-        "...........BBGGGGGGGGGBB........",
-        ".............BBBBBBBBB..........",
-        "...............BTTTB............",
-        "...............BTTTB............",
-        "...............BTTTB............",
-        "...............BTTTB............",
-        "...............BTTTB............",
-        "...............BTTTB............",
-        "...............BTTTB............",
-        "...............BTTTB............",
-        "...............BTTTB............",
-        "..............BBTTTBB...........",
-        ".............BTTTTTTTB..........",
-        ".............BGGGGGGGB..........",
-        "..............BBBBBBB..........."
-    ];
-    const scaleTree = 2;
-    for (let r = 0; r < pixelMapTree.length; r++) {
-        for (let c = 0; c < pixelMapTree[r].length; c++) {
-            const char = pixelMapTree[r][c];
-            if (char === '.') continue;
-            if (char === 'B') dT.fillStyle = '#000000';
-            else if (char === 'G') {
-                if (r < 10) dT.fillStyle = '#4ae24a';
-                else if (r < 20) dT.fillStyle = '#22b14c';
-                else dT.fillStyle = '#158033';
-            }
-            else if (char === 'T') dT.fillStyle = '#8b4513';
-            dT.fillRect(c * scaleTree, r * scaleTree, scaleTree, scaleTree);
-        }
-    }
+    
+    // Tronco
+    dT.fillStyle = '#5c3a21';
+    dT.fillRect(26, 44, 12, 32);
+    dT.fillStyle = '#3d2314';
+    dT.fillRect(34, 44, 4, 32);
+
+    // Copa Verde Arredondada
+    dT.fillStyle = '#1e7b23';
+    dT.beginPath(); dT.arc(32, 28, 26, 0, Math.PI * 2); dT.fill();
+    dT.fillStyle = '#2bb333';
+    dT.beginPath(); dT.arc(28, 22, 20, 0, Math.PI * 2); dT.fill();
+    dT.fillStyle = '#4ae252';
+    dT.beginPath(); dT.arc(24, 18, 12, 0, Math.PI * 2); dT.fill();
+
     s.arvore = cTree;
 
     // 2. Estrada e Calçada
     const cRoad = document.createElement('canvas'); cRoad.width = 64; cRoad.height = 64;
     const dR = cRoad.getContext('2d');
-    dR.fillStyle = '#55555e'; dR.fillRect(0,0,64,64);
+    dR.fillStyle = '#44444c'; dR.fillRect(0,0,64,64);
     for(let y=0; y<64; y+=16) {
-        dR.fillStyle = '#3a3a42'; dR.fillRect(0, y, 64, 2);
+        dR.fillStyle = '#323238'; dR.fillRect(0, y, 64, 2);
     }
     dR.fillStyle = '#f5b041'; dR.fillRect(30, 0, 4, 64);
     s.estrada = cRoad;
@@ -201,93 +157,99 @@ function gerarSprites() {
     }
     s.calcada = cSidewalk;
 
-    // 3. BATMAN REFIEL À IMAGEM FORNECIDA
-    const pixelMapBatman = [
-        ".................BB....BB................",
-        "................BBBB..BBBB...............",
-        "...............BB11BBBB11BB..............",
-        "..............BB1111BB1111BB.............",
-        "..............BB1111111111BB.............",
-        "..............BB1111111111BB.............",
-        ".............BB111WW11WW111BB............",
-        ".............BB111WW11WW111BB............",
-        ".............BB111111111111BB............",
-        "..............BB111SSSS111BB.............",
-        "...............BB1SSSSSS1BB..............",
-        "..............BBB1SSSSSS1BBB.............",
-        "............BB22BBB1111BBB22BB...........",
-        "...........BB22222BBBBBB22222BB..........",
-        "..........BB222222222222222222BB.........",
-        "..........BB222222222222222222BB.........",
-        ".........BB33222222222222222233BB........",
-        ".........BB33222222222222222233BB........",
-        "........BB3333222222222222223333BB.......",
-        "........BB3333222222222222223333BB.......",
-        "........BB33333YYYYYYYYYYYY33333BB.......",
-        "........BB33333YYYYYYYYYYYY33333BB.......",
-        ".........BB3333BB11111111BB3333BB........",
-        ".........BB3333BB11111111BB3333BB........",
-        "..........BBBBB222222222222BBBBB.........",
-        "...........BB..22222..22222..BB..........",
-        "...........BB..22222..22222..BB..........",
-        "...........BB..22222..22222..BB..........",
-        "...........BB..11111..11111..BB..........",
-        "...........BB..11111..11111..BB..........",
-        "..........BBBB.BBBBB..BBBBB.BBBB........."
-    ];
-
+    // 3. BATMAN TOTALMENTE REFEITO (Alto, imponente, com orelhas pontiagudas e capa)
     s.drawBatman = function(ctx, x, y, frame) {
+        const offsetLeft = (frame === 1) ? -2 : 0;
+        const offsetRight = (frame === 2) ? 2 : 0;
+
         ctx.save();
         ctx.translate(x, y);
 
-        const scale = 1.6;
-        const offsetYLeft = (frame === 1) ? -2 : 0;
-        const offsetYRight = (frame === 2) ? -2 : 0;
+        // Capa atrás
+        ctx.fillStyle = '#111318';
+        ctx.beginPath();
+        ctx.moveTo(2, 14);
+        ctx.lineTo(30, 14);
+        ctx.lineTo(34, 48);
+        ctx.lineTo(-2, 48);
+        ctx.closePath();
+        ctx.fill();
 
-        for (let r = 0; r < pixelMapBatman.length; r++) {
-            for (let c = 0; c < pixelMapBatman[r].length; c++) {
-                const char = pixelMapBatman[r][c];
-                if (char === '.') continue;
+        // Botas e Pernas
+        ctx.fillStyle = '#222630';
+        ctx.fillRect(8, 34 + offsetLeft, 6, 14);
+        ctx.fillRect(18, 34 + offsetRight, 6, 14);
 
-                let pxY = r * scale;
-                // Anima as pernas ao caminhar
-                if (r >= 25 && c < 20) pxY += offsetYLeft;
-                if (r >= 25 && c >= 20) pxY += offsetYRight;
+        ctx.fillStyle = '#0a0b0e';
+        ctx.fillRect(7, 43 + offsetLeft, 8, 5);
+        ctx.fillRect(17, 43 + offsetRight, 8, 5);
 
-                if (char === 'B') ctx.fillStyle = '#000000';      // Contorno preto
-                else if (char === '1') ctx.fillStyle = '#262626'; // Preto / Capuz / Botas
-                else if (char === '2') ctx.fillStyle = '#737373'; // Cinza traje
-                else if (char === '3') ctx.fillStyle = '#404040'; // Capa escura
-                else if (char === 'W') ctx.fillStyle = '#ffffff'; // Olho branco
-                else if (char === 'S') ctx.fillStyle = '#e0a98b'; // Pele do rosto
-                else if (char === 'Y') ctx.fillStyle = '#e6ab14'; // Cinto amarelo
+        // Tronco (Cinza Escuro com Cinto Amarelo)
+        ctx.fillStyle = '#3a3f4d';
+        ctx.fillRect(8, 14, 16, 20);
 
-                ctx.fillRect(c * scale, pxY, scale, scale);
-            }
-        }
+        // Cinto de Utilidades
+        ctx.fillStyle = '#fbc02d';
+        ctx.fillRect(7, 28, 18, 4);
+        ctx.fillStyle = '#f57f17';
+        ctx.fillRect(13, 27, 6, 6);
+
+        // Símbolo do Batman no Peito
+        ctx.fillStyle = '#0a0b0e';
+        ctx.beginPath();
+        ctx.ellipse(16, 20, 5, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Braços
+        ctx.fillStyle = '#282c37';
+        ctx.fillRect(4, 15, 4, 14);
+        ctx.fillRect(24, 15, 4, 14);
+
+        // Cabeça e Máscara
+        ctx.fillStyle = '#111318';
+        // Base da Cabeça
+        ctx.fillRect(9, 4, 14, 11);
+        
+        // Orelhas Pontiagudas do Batman (Bem altas e distintas)
+        ctx.beginPath();
+        ctx.moveTo(9, 6); ctx.lineTo(8, -3); ctx.lineTo(12, 4); ctx.closePath(); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(23, 6); ctx.lineTo(24, -3); ctx.lineTo(20, 4); ctx.closePath(); ctx.fill();
+
+        // Queixo / Rosto à mostra
+        ctx.fillStyle = '#ffcc80';
+        ctx.fillRect(12, 10, 8, 5);
+
+        // Olhos Brancos do Capuz (Angulados)
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(10, 7); ctx.lineTo(14, 8); ctx.lineTo(11, 9); ctx.closePath(); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(22, 7); ctx.lineTo(18, 8); ctx.lineTo(21, 9); ctx.closePath(); ctx.fill();
+
         ctx.restore();
     };
 
-    // 4. Miguel com Passos
+    // 4. Miguel
     s.drawMiguel = function(ctx, x, y, frame) {
-        const offsetLeft = (frame === 1) ? -3 : 0;
-        const offsetRight = (frame === 2) ? 3 : 0;
+        const offsetLeft = (frame === 1) ? -2 : 0;
+        const offsetRight = (frame === 2) ? 2 : 0;
 
         ctx.save();
         ctx.translate(x, y);
 
         ctx.fillStyle = '#263238';
-        ctx.fillRect(6, 36 + offsetLeft, 7, 12);
-        ctx.fillRect(17, 36 + offsetRight, 7, 12);
+        ctx.fillRect(6, 32 + offsetLeft, 6, 12);
+        ctx.fillRect(16, 32 + offsetRight, 6, 12);
         ctx.fillStyle = '#37474f';
-        ctx.fillRect(5, 45 + offsetLeft, 9, 5);
-        ctx.fillRect(16, 45 + offsetRight, 9, 5);
+        ctx.fillRect(5, 41 + offsetLeft, 8, 5);
+        ctx.fillRect(15, 41 + offsetRight, 8, 5);
 
-        ctx.fillStyle = '#29b6f6'; ctx.fillRect(6, 18, 18, 18);
-        ctx.fillStyle = '#1565c0'; ctx.fillRect(11, 20, 8, 14);
+        ctx.fillStyle = '#29b6f6'; ctx.fillRect(6, 16, 16, 16);
+        ctx.fillStyle = '#1565c0'; ctx.fillRect(11, 18, 6, 12);
 
-        ctx.fillStyle = '#ffcc80'; ctx.fillRect(8, 6, 14, 13);
-        ctx.fillStyle = '#6d4c41'; ctx.fillRect(6, 2, 18, 7);
+        ctx.fillStyle = '#ffcc80'; ctx.fillRect(7, 5, 14, 12);
+        ctx.fillStyle = '#6d4c41'; ctx.fillRect(5, 1, 18, 6);
 
         ctx.restore();
     };
@@ -477,7 +439,7 @@ function draw() {
 
         const posX = [20, 90, 800, 870];
         for (let x of posX) {
-            for (let y = 10; y < canvas.height; y += 120) {
+            for (let y = 10; y < canvas.height; y += 110) {
                 ctx.drawImage(SPRITES.arvore, x, y);
             }
         }
@@ -488,7 +450,7 @@ function draw() {
         ctx.drawImage(SPRITES.igreja, 610, 480);
 
         SPRITES.drawMiguel(ctx, player.x, player.y, walkFrame);
-        SPRITES.drawBatman(ctx, player.x + 35, player.y - 4, walkFrame);
+        SPRITES.drawBatman(ctx, player.x + 32, player.y - 2, walkFrame);
 
     } else if (cenaAtual === 'piscina') {
         ctx.fillStyle = '#27ae60'; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -501,7 +463,7 @@ function draw() {
         desenharBalaoComPiscina(280, 90, 400, 240);
 
         SPRITES.drawMiguel(ctx, player.x, player.y, walkFrame);
-        SPRITES.drawBatman(ctx, player.x + 35, player.y - 4, walkFrame);
+        SPRITES.drawBatman(ctx, player.x + 32, player.y - 2, walkFrame);
 
         ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(10, 10, 340, 36);
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px sans-serif';
@@ -516,7 +478,7 @@ function draw() {
         ctx.fillText('👴 Brincando com o Vovô! (Pressione ESC para voltar)', 20, 33);
 
         SPRITES.drawMiguel(ctx, player.x, player.y, walkFrame);
-        SPRITES.drawBatman(ctx, player.x + 35, player.y - 4, walkFrame);
+        SPRITES.drawBatman(ctx, player.x + 32, player.y - 2, walkFrame);
     }
 }
 
